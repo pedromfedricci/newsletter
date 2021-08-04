@@ -1,0 +1,26 @@
+{
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "target": "development-environment",
+    },
+    "runArgs": [
+        "--name=newsletter",
+        "--hostname=newsletter",
+    ],
+    //"workspaceMount": ""
+    //"workspaceFolder": "",
+    "extensions": [
+        "matklad.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "shd101wyy.markdown-preview-enhanced",
+        "davidanson.vscode-markdownlint",
+        "github.vscode-pull-request-github",
+        "eamodio.gitlens",
+    ],
+    "overrideCommand": true,
+    "shutdownAction": "stopContainer",
+}
