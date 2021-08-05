@@ -1,4 +1,4 @@
-name: Rust Tools
+name: CI
 
 on:
   push:
@@ -9,35 +9,42 @@ on:
     branches:
       - main
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
         with:
           command: test
 
   fmt:
-    name: Rustfmt
+    name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: rustfmt
-      - uses: actions-rs/cargo@v1
+
+      - name: Check format
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
@@ -46,13 +53,18 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: clippy
-      - uses: actions-rs/clippy-check@v1
+
+      - name: Check with clippy
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -- -D warnings
@@ -61,7 +73,7 @@ jobs:
     name: Code coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Install stable toolchain
@@ -70,7 +82,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Run cargo-tarpaulin
+      - name: Check code coverage
         uses: actions-rs/tarpaulin@v0.1
         with:
           args: '--ignore-tests --avoid-cfg-tarpaulin'
