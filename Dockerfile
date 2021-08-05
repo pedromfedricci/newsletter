@@ -28,6 +28,7 @@ RUN rustup component add \
         cargo-edit \
         cargo-expand \
         cargo-valgrind \
-        cargo-audit
+        cargo-audit \
+        cargo-make
 
 FROM install-rust-tools AS development-environment

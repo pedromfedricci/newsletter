@@ -1,0 +1,51 @@
+[env]
+CARGO_TERM_COLOR = "always"
+
+[tasks.fmt]
+description = "Runs cargo fmt"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.audit]
+description = "Audits package dependencies"
+command = "cargo"
+args = ["audit"]
+
+[tasks.tarpaulin]
+description = "Runs tarpaulin as coverage tool (linux only)"
+category = "Test"
+command = "cargo"
+args = ["tarpaulin", "--ignore-tests", "--avoid-cfg-tarpaulin"]
+
+[tasks.ci-fmt]
+description = "Runs cargo fmt in check mode"
+command = "cargo"
+args = ["fmt", "--all", "--", "--check"]
+
+[tasks.ci-test]
+description = "Runs all tests"
+command = "cargo"
+args = ["test"]
+
+[tasks.ci-clippy]
+description = "Runs clippy"
+command = "cargo"
+args = ["clippy", "--", "--deny", "warnings"]
+
+[tasks.ci-coverage]
+description = "Runs coverage tool"
+category = "Test"
+run_task = [
+    { name = "tarpaulin", condition = { platforms = ["linux"] } }
+]
+
+[tasks.ci-fast]
+description = "Runs ci tasks locally"
+run_task = { name = ["ci-fmt", "ci-test", "ci-clippy"], parallel = true }
+
+[tasks.ci-full]
+description = "Runs all ci tasks locally"
+dependencies = [
+    "ci-fast",
+]
+run_task = { name = "ci-coverage" }
