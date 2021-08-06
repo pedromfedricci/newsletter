@@ -41,7 +41,7 @@ run_task = [
 
 [tasks.ci-fast]
 description = "Runs ci tasks locally"
-run_task = { name = ["ci-fmt", "ci-test", "ci-clippy"], parallel = true }
+run_task = { name = ["ci-fmt", "ci-test", "ci-clippy"] }
 
 [tasks.ci-full]
 description = "Runs all ci tasks locally"
