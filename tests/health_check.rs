@@ -5,7 +5,7 @@ use std::net::{SocketAddr, TcpListener};
 fn url_from(addr: &SocketAddr, path: &str) -> Url {
     let protocol = "http://";
     Url::parse(&format!("{}{}{}", protocol, addr.to_string(), path))
-        .expect("Failed to parse URL from address and path.")
+        .expect("Failed to parse URL from address and path")
 }
 
 // Runs the server to test the public APIs.
@@ -15,7 +15,7 @@ fn spawn_app() -> SocketAddr {
     let given_port = listener.local_addr().unwrap().port();
     addr.set_port(given_port);
 
-    let server = newsletter::startup::run(listener).expect("Failed to bind address");
+    let server = libnewsletter::startup::run(listener).expect("Failed to bind address");
     tokio::spawn(server);
 
     addr
@@ -33,7 +33,7 @@ async fn test_health_check() {
         .get(url_from(&addr, "/health_check"))
         .send()
         .await
-        .expect("Failed to execute request.");
+        .expect("Failed to execute request");
 
     assert!(response.status().is_success());
     assert_eq!(Some(0), response.content_length());
@@ -53,7 +53,7 @@ async fn test_subscribe_valid_data() {
         .body(test_body)
         .send()
         .await
-        .expect("Failed to execute request.");
+        .expect("Failed to execute request");
 
     assert_eq!(200, response.status().as_u16());
 }
@@ -76,7 +76,7 @@ async fn test_subscribe_missing_data() {
             .body(invalid_body)
             .send()
             .await
-            .expect("Failed to execute request.");
+            .expect("Failed to execute request");
 
         assert_eq!(
             400,

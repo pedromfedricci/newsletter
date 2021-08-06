@@ -1,10 +1,11 @@
-use newsletter::startup::run;
-use std::net::{SocketAddr, TcpListener};
+use libnewsletter::{configuration, startup};
+use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let config = configuration::settings().expect("Failed to read configuration");
+    let addr = config.app_addr;
     let listener = TcpListener::bind(&addr)?;
 
-    run(listener)?.await
+    startup::run(listener)?.await
 }

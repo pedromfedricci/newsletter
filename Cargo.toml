@@ -5,7 +5,7 @@ edition = "2018"
 
 [lib]
 path = "src/lib.rs"
-name = "newsletter"
+name = "libnewsletter"
 
 [[bin]]
 path = "src/main.rs"
@@ -15,6 +15,7 @@ name = "newsletter"
 serde = { version = "1", features = ["derive"] }
 actix-http = "=3.0.0-beta.8"
 actix-web = "=4.0.0-beta.8"
+config = "0.11.0"
 
 [dev-dependencies]
 actix-rt = "2"
