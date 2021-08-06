@@ -12,6 +12,7 @@ path = "src/main.rs"
 name = "newsletter"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
 actix-http = "=3.0.0-beta.8"
 actix-web = "=4.0.0-beta.8"
 
