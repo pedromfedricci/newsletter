@@ -1,11 +1,14 @@
-use libnewsletter::{configuration, startup};
+use libnewsletter::{config, startup};
+use sqlx::PgPool;
 use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let config = configuration::settings().expect("Failed to read configuration");
-    let addr = config.app_addr;
-    let listener = TcpListener::bind(&addr)?;
+    let config = config::settings().expect("Failed to read configuration");
+    let listener = TcpListener::bind(&config.app_addr)?;
+    let db_pool = PgPool::connect(&config.database.connection_string())
+        .await
+        .expect("Failed to connect to database");
 
-    startup::run(listener)?.await
+    startup::run(listener, db_pool)?.await
 }
