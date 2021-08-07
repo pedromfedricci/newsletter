@@ -19,16 +19,17 @@ USER $USER
 FROM create-application-user AS install-rust-tools
 
 RUN rustup component add \
-        rust-src \
+        clippy \
         rustfmt \
         rust-docs \
-        clippy \
+        rust-src \
     && \
     cargo install \
+        cargo-audit \
         cargo-edit \
         cargo-expand \
-        cargo-valgrind \
-        cargo-audit \
-        cargo-make
+        cargo-make \
+        cargo-tarpaulin \
+        cargo-valgrind
 
 FROM install-rust-tools AS development-environment
