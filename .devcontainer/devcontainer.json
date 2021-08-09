@@ -1,15 +1,12 @@
 {
-    "build": {
-        "dockerfile": "../Dockerfile",
-        "target": "development-environment",
-    },
-    "runArgs": [
-        "--name=newsletter",
-        "--hostname=newsletter",
-        "--network=newsletter"
-    ],
-    //"workspaceMount": ""
-    //"workspaceFolder": "",
+    "name": "${env:COMPOSE_PROJECT_NAME}",
+    "dockerComposeFile": "../docker-compose.yaml",
+    "service": "backend",
+    "workspaceFolder": "${localEnv:DOCKER_WORKSPACE}",
+    "overrideCommand": true,
+    "shutdownAction": "stopCompose",
+    "postCreateCommand": "sqlx database create && sqlx database migrate",
+
     "extensions": [
         "matklad.rust-analyzer",
         "vadimcn.vscode-lldb",
@@ -22,6 +19,4 @@
         "github.vscode-pull-request-github",
         "eamodio.gitlens",
     ],
-    "overrideCommand": true,
-    "shutdownAction": "stopContainer",
 }

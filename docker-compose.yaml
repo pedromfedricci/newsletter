@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  database:
+    image: "${DATABASE_IMAGE}"
+    hostname: "${DATABASE_NAME}"
+    ports:
+      - "${DOCKER_HOST_DATABASE_PORT}:${DATABASE_PORT}"
+    environment:
+      POSTGRES_USER: "${DATABASE_USER}"
+      POSTGRES_PASSWORD: "${DATABASE_PASS}"
+      POSTGRES_DB: "${DATABASE_NAME}"
+    networks:
+      db:
+        aliases:
+          - "${DATABASE_HOST}"
+
+  backend:
+    build:
+      context: .
+      args:
+        - RUST_DEV_ENV_IMAGE
+        - SQLX_CLI_VERSION
+    hostname: "${COMPOSE_PROJECT_NAME}"
+    ports:
+      - "${DOCKER_HOST_APP_PORT}:${APP_PORT}"
+    environment:
+      DATABASE_URL: "${DATABASE_URL}"
+    volumes:
+      - ".:${DOCKER_WORKSPACE}"
+    networks:
+      - db
+    depends_on:
+      - database
+
+networks:
+  db:
