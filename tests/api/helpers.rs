@@ -20,14 +20,20 @@ pub(crate) fn url_from(addr: &SocketAddr, path: &str) -> Url {
 
 // Runs the server to test the public APIs.
 pub(crate) async fn spawn_app() -> TestApp {
-    let mut addr = SocketAddr::from(([127, 0, 0, 1], 0));
-    let listener = TcpListener::bind(&addr).expect("Failed to bind to random port");
-    let given_port = listener.local_addr().unwrap().port();
-    addr.set_port(given_port);
+    let (addr, listener) = {
+        let mut addr = SocketAddr::from(([127, 0, 0, 1], 0));
+        let listener = TcpListener::bind(&addr).expect("Failed to bind to random port");
+        // set addr port to OS's random given port
+        addr.set_port(listener.local_addr().unwrap().port());
+        (addr, listener)
+    };
 
-    let mut config = config::settings().expect("Failed to read configuration");
-    config.database.database_name = Uuid::new_v4().to_string();
-    let db_pool = configure_database(&config.database).await;
+    let db_settings = {
+        let mut config = config::settings().expect("Failed to read configuration");
+        config.database.database_name = Uuid::new_v4().to_string();
+        config.database
+    };
+    let db_pool = configure_database(&db_settings).await;
 
     let server = startup::run(listener, db_pool.clone()).expect("Failed to bind address");
     tokio::spawn(server);
@@ -35,19 +41,22 @@ pub(crate) async fn spawn_app() -> TestApp {
     TestApp { addr, db_pool }
 }
 
-async fn configure_database(config: &DatabaseSettings) -> PgPool {
+async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
     // Single connection to database.
-    let mut conn = PgConnection::connect(&config.connection_string_without_db_name())
+    let mut conn = PgConnection::connect_with(&db_settings.connection_with_host())
         .await
-        .expect("Failed to connect to database");
+        .expect("Failed to connect to database host");
 
     // Create new database.
-    conn.execute(&*format!(r#"CREATE DATABASE "{}";"#, config.database_name))
-        .await
-        .expect("Failed to create database");
+    conn.execute(&*format!(
+        r#"CREATE DATABASE "{}";"#,
+        db_settings.database_name
+    ))
+    .await
+    .expect("Failed to create database");
 
     // Create database connection pool.
-    let db_pool = PgPool::connect(&config.connection_string())
+    let db_pool = PgPool::connect_with(db_settings.connection_with_db())
         .await
         .expect("Failed to connect to database");
 

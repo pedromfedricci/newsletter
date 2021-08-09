@@ -3,6 +3,6 @@ app_addr: "127.0.0.1:8000"
 database:
   host: "newsletterdb"
   port: 5432
-  username: "testdbuser"
-  password: "testdbpass"
+  username: "postgres"
+  password: "password"
   database_name: "newsletterdb"

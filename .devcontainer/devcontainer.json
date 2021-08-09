@@ -1,11 +1,10 @@
 {
-    "name": "${env:COMPOSE_PROJECT_NAME}",
     "dockerComposeFile": "../docker-compose.yaml",
     "service": "backend",
-    "workspaceFolder": "${localEnv:DOCKER_WORKSPACE}",
+    "workspaceFolder": "/workspace/newsletter",
     "overrideCommand": true,
     "shutdownAction": "stopCompose",
-    "postCreateCommand": "sqlx database create && sqlx database migrate",
+    "postStartCommand": "/bin/sh scripts/init_db.sh",
 
     "extensions": [
         "matklad.rust-analyzer",

@@ -6,7 +6,7 @@ use std::net::TcpListener;
 async fn main() -> std::io::Result<()> {
     let config = config::settings().expect("Failed to read configuration");
     let listener = TcpListener::bind(&config.app_addr)?;
-    let db_pool = PgPool::connect(&config.database.connection_string())
+    let db_pool = PgPool::connect_with(config.database.connection_with_db())
         .await
         .expect("Failed to connect to database");
 

@@ -1,13 +1,14 @@
 use config::{Config, ConfigError, File};
+use sqlx::postgres::PgConnectOptions;
 use std::net::SocketAddr;
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub app_addr: SocketAddr,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct DatabaseSettings {
     pub database_name: String,
     pub username: String,
@@ -23,18 +24,15 @@ pub fn settings() -> Result<Settings, ConfigError> {
 }
 
 impl DatabaseSettings {
-    pub fn connection_string(&self) -> String {
-        format!(
-            "{}/{}",
-            self.connection_string_without_db_name(),
-            self.database_name
-        )
+    pub fn connection_with_host(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(&self.password)
+            .port(self.port)
     }
 
-    pub fn connection_string_without_db_name(&self) -> String {
-        format!(
-            "postgres://{}:{}@{}:{}",
-            self.username, self.password, self.host, self.port
-        )
+    pub fn connection_with_db(&self) -> PgConnectOptions {
+        self.connection_with_host().database(&self.database_name)
     }
 }
