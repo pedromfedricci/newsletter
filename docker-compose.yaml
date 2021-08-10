@@ -15,11 +15,7 @@ services:
           - "${DATABASE_HOST}"
 
   backend:
-    build:
-      context: .
-      args:
-        - RUST_DEV_ENV_IMAGE
-        - SQLX_CLI_VERSION
+    image: "${DEV_ENV_IMAGE}"
     hostname: "${COMPOSE_PROJECT_NAME}"
     ports:
       - "${DOCKER_HOST_APP_PORT}:${APP_PORT}"
