@@ -15,7 +15,7 @@ services:
           - "${DATABASE_HOST}"
 
   backend:
-    image: "${DEV_ENV_IMAGE}"
+    image: "${DEV_BACKEND_IMAGE}"
     hostname: "${COMPOSE_PROJECT_NAME}"
     ports:
       - "${DOCKER_HOST_APP_PORT}:${APP_PORT}"

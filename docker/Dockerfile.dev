@@ -1,7 +1,9 @@
-ARG RUST_DEV_ENV_IMAGE
-FROM ${RUST_DEV_ENV_IMAGE}
+ARG RUST_BASE_IMAGE=pedromfedricci/dev-rust:1.54.0
 
-ARG SQLX_CLI_VERSION
+FROM ${RUST_BASE_IMAGE}
+
+ARG SQLX_CLI_VERSION=0.5.5
+
 RUN cargo install sqlx-cli \
         --version=${SQLX_CLI_VERSION} \
         --locked \
