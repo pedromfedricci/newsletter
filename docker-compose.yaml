@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   database:
     image: "${DATABASE_IMAGE}"
@@ -9,6 +10,8 @@ services:
       POSTGRES_USER: "${DATABASE_USER}"
       POSTGRES_PASSWORD: "${DATABASE_PASS}"
       POSTGRES_DB: "${DATABASE_NAME}"
+    volumes:
+      - db:/var/lib/postgresql/data
     networks:
       db:
         aliases:
@@ -27,6 +30,9 @@ services:
       - db
     depends_on:
       - database
+
+volumes:
+  db:
 
 networks:
   db:
