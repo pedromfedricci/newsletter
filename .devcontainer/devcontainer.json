@@ -4,7 +4,7 @@
     "workspaceFolder": "/workspace/newsletter",
     "overrideCommand": true,
     "shutdownAction": "stopCompose",
-    "postStartCommand": ["/bin/bash", "scripts/init_db.sh"],
+    "postStartCommand": ["/bin/sh", "scripts/wait_for_db.sh"],
 
     "extensions": [
         "matklad.rust-analyzer",

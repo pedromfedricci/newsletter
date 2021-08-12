@@ -3,29 +3,26 @@ version: "3.9"
 services:
   database:
     image: "${DATABASE_IMAGE}"
-    hostname: "${DATABASE_NAME}"
+    hostname: "${DATABASE_HOSTNAME}"
     ports:
-      - "${DOCKER_HOST_DATABASE_PORT}:${DATABASE_PORT}"
-    environment:
-      POSTGRES_USER: "${DATABASE_USER}"
-      POSTGRES_PASSWORD: "${DATABASE_PASS}"
-      POSTGRES_DB: "${DATABASE_NAME}"
+      - "${HOST_DATABASE_PORT}:${DATABASE_PORT}"
+    env_file:
+      - ./.env.database
     volumes:
       - db:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
     networks:
       db:
-        aliases:
-          - "${DATABASE_HOST}"
 
   backend:
     image: "${DEV_BACKEND_IMAGE}"
     hostname: "${COMPOSE_PROJECT_NAME}"
     ports:
-      - "${DOCKER_HOST_APP_PORT}:${APP_PORT}"
-    environment:
-      DATABASE_URL: "${DATABASE_URL}"
+      - "${HOST_APP_PORT}:${APP_PORT}"
+    env_file:
+      - ./.env.database
     volumes:
-      - ".:${DOCKER_WORKSPACE}"
+      - ".:${WORKSPACE}"
     networks:
       - db
     depends_on:

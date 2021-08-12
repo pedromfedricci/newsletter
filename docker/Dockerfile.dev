@@ -9,3 +9,11 @@ RUN cargo install sqlx-cli \
         --locked \
         --no-default-features \
         --features postgres
+
+ARG POSTGRES_CLIENT_VERSION=11
+
+USER root
+RUN apt-get install -y --no-install-recommends \
+        postgresql-client-${POSTGRES_CLIENT_VERSION}
+
+USER rustdev
