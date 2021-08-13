@@ -65,6 +65,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
+      SQLX_FEATURES: postgres
 
     steps:
       - name: Install stable toolchain
@@ -75,6 +77,14 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
 
       - name: Check database
         # TODO Must apply a checking mechanism
@@ -94,22 +104,28 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name : Run cargo test
+      - name : Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
 
   fmt:
-    name: Rustfmt
+    name: Formate code
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: rustfmt
-      - uses: actions-rs/cargo@v1
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run cargo-fmt
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
@@ -131,6 +147,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
+      SQLX_FEATURES: postgres
 
     steps:
       - name: Install stable toolchain
@@ -142,6 +160,14 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
 
       - name: Check database
         # TODO Must apply a checking mechanism
@@ -161,7 +187,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: actions-rs/clippy-check@v1
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -- -D warnings
@@ -183,6 +210,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
+      SQLX_FEATURES: postgres
 
     steps:
       - name: Install stable toolchain
@@ -193,6 +222,14 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
 
       - name: Check database
         # TODO Must apply a checking mechanism
