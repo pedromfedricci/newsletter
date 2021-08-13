@@ -102,15 +102,15 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
 
       - name : Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
 
-  fmt:
-    name: Formate code
+  format:
+    name: Code format
     runs-on: ubuntu-latest
 
     steps:
@@ -185,7 +185,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
