@@ -64,6 +64,7 @@ jobs:
           - "5432:5432"
 
     env:
+      APP_ENVIRONMENT: ci
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
@@ -146,6 +147,7 @@ jobs:
           - "5432:5432"
 
     env:
+      APP_ENVIRONMENT: ci
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
@@ -209,6 +211,7 @@ jobs:
           - "5432:5432"
 
     env:
+      APP_ENVIRONMENT: ci
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
