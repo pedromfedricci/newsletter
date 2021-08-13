@@ -6,6 +6,7 @@ on:
       - main
   pull_request:
     types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,6 +15,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:12
@@ -22,20 +24,62 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - "5432:5432"
+    env:
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
+      SQLX_FEATURES: postgres
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           override: true
+
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
+
+      - name: Install sqlx-cli 
+        uses: actions-rs/cargo@v1
+        if: steps.cache-sqlx.outputs.cache-hit == false
+        with:
+          command: install 
+          args: >
+            sqlx-cli
+            --force
+            --version=${{ env.SQLX_VERSION }}
+            --features=${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check database
+        # TODO Must apply a checking mechanism
+        run: sleep 1
+
       - name: Migrate database
         run: |
-          sudo apt-get install libpq-dev -y
-          cargo install --version=0.5.5 --locked sqlx-cli --no-default-features --features postgres
-          SKIP_DOCKER=true ./scripts/init_db.sh
-      - uses: actions-rs/cargo@v1
+          sqlx database create
+          sqlx migrate run
+
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name : Run cargo test
+        uses: actions-rs/cargo@v1
         with:
           command: test
 
@@ -65,19 +109,61 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - "5432:5432"
+    env:
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
+      SQLX_FEATURES: postgres
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           components: clippy
           toolchain: stable
           override: true
+
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
+
+      - name: Install sqlx-cli 
+        uses: actions-rs/cargo@v1
+        if: steps.cache-sqlx.outputs.cache-hit == false
+        with:
+          command: install 
+          args: >
+            sqlx-cli
+            --force
+            --version=${{ env.SQLX_VERSION }}
+            --features=${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check database
+        # TODO Must apply a checking mechanism
+        run: sleep 1
+
       - name: Migrate database
         run: |
-          sudo apt-get install libpq-dev -y
-          cargo install --version=0.5.5 --locked sqlx-cli --no-default-features --features postgres
-          SKIP_DOCKER=true ./scripts/init_db.sh
+          sqlx database create
+          sqlx migrate run
+
+      - name: Cache cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -94,23 +180,54 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - "5432:5432"
+    env:
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      SQLX_VERSION: 0.5.5
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+          key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
+
+      - name: Install sqlx-cli 
+        uses: actions-rs/cargo@v1
+        if: steps.cache-sqlx.outputs.cache-hit == false
+        with:
+          command: install 
+          args: >
+            sqlx-cli
+            --force
+            --version=${{ env.SQLX_VERSION }}
+            --features=${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check database
+        # TODO Must apply a checking mechanism
+        run: sleep 1
+
       - name: Migrate database
         run: |
-          sudo apt-get install libpq-dev -y
-          cargo install --version=0.5.5 --locked sqlx-cli --no-default-features --features postgres
-          SKIP_DOCKER=true ./scripts/init_db.sh
+          sqlx database create
+          sqlx migrate run
+
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          args: '--ignore-tests --avoid-cfg-tarpaulin'
+          args: >
+            --ignore-tests
+            --avoid-cfg-tarpaulin'
+            --out Xml
