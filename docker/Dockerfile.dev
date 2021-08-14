@@ -1,19 +1,20 @@
-ARG RUST_BASE_IMAGE=pedromfedricci/dev-rust:1.54.0
+ARG RUST_BASE_DEV_IMAGE=pedromfedricci/rustdev:1.54.0
 
-FROM ${RUST_BASE_IMAGE}
-
-ARG SQLX_CLI_VERSION=0.5.5
-
-RUN cargo install sqlx-cli \
-        --version=${SQLX_CLI_VERSION} \
-        --locked \
-        --no-default-features \
-        --features postgres
-
-ARG POSTGRES_CLIENT_VERSION=11
+FROM ${RUST_BASE_DEV_IMAGE}
 
 USER root
-RUN apt-get install -y --no-install-recommends \
-        postgresql-client-${POSTGRES_CLIENT_VERSION}
+ARG POSTGRES_CLIENT_VERSION=11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        postgresql-client-${POSTGRES_CLIENT_VERSION} \
+    && \
+    apt-get remove -y --auto-remove && rm -rf /var/lib/apt/lists/*
 
-USER rustdev
+USER rust
+ARG SQLX_CLI_VERSION=0.5.5
+ARG SQLX_CLI_FEATURES=postgres
+RUN cargo install sqlx-cli \
+        --version=${SQLX_CLI_VERSION} \
+        --features=${SQLX_CLI_FEATURES} \
+        --no-default-features \
+        --locked \
+        --force

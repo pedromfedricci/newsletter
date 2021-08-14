@@ -1,2 +1,2 @@
 database:
-  host: database-dev
+  host: localhost

@@ -10,7 +10,6 @@ services:
       - ./.env
     volumes:
       - db:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d:ro
     networks:
       db:
         aliases:

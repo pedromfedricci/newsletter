@@ -65,7 +65,7 @@ jobs:
 
     env:
       APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
 
@@ -148,7 +148,7 @@ jobs:
 
     env:
       APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
 
@@ -212,7 +212,7 @@ jobs:
 
     env:
       APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletterdb
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
       SQLX_VERSION: 0.5.5
       SQLX_FEATURES: postgres
 

@@ -77,15 +77,15 @@ impl DatabaseSettings {
 pub(crate) enum Environment {
     Local,
     CI,
-    Production,
+    Container,
 }
 
 impl Environment {
     pub fn as_str(&self) -> &'static str {
         match self {
             Environment::Local => "local",
-            Environment::Production => "production",
-            &Environment::CI => "ci",
+            Environment::Container => "container",
+            Environment::CI => "ci",
         }
     }
 }
@@ -96,10 +96,10 @@ impl TryFrom<String> for Environment {
     fn try_from(s: String) -> Result<Self, Self::Error> {
         match s.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
-            "production" => Ok(Self::Production),
+            "container" => Ok(Self::Container),
             "ci" => Ok(Self::CI),
             other => Err(format!(
-                "{} is not a supported environment. Use either `local` or `production`.",
+                "{} is not a supported environment. Use either `local`, `ci` or `container`.",
                 other
             )),
         }
