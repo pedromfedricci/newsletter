@@ -1,11 +1,25 @@
 use libnewsletter::{
     config::{self, DatabaseSettings},
-    startup,
+    startup, telemetry,
 };
+use once_cell::sync::Lazy;
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::{SocketAddr, TcpListener};
 use uuid::Uuid;
+
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter = "info".to_string();
+    let name = "test".to_string();
+
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = telemetry::get_subscriber(name, default_filter, std::io::stdout);
+        telemetry::init_subscriber(subscriber);
+    } else {
+        let subscriber = telemetry::get_subscriber(name, default_filter, std::io::sink);
+        telemetry::init_subscriber(subscriber);
+    }
+});
 
 pub(crate) struct TestApp {
     pub(crate) addr: SocketAddr,
@@ -20,6 +34,8 @@ pub(crate) fn url_from(addr: &SocketAddr, path: &str) -> Url {
 
 // Runs the server to test the public APIs.
 pub(crate) async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
     let (addr, listener) = {
         let mut addr = SocketAddr::from(([127, 0, 0, 1], 0));
         let listener = TcpListener::bind(&addr).expect("Failed to bind to random port");
