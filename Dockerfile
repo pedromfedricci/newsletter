@@ -40,5 +40,5 @@ RUN apt-get update -y \
 COPY --from=builder /app/target/release/newsletter newsletter
 COPY config config
 
-ENV APP_ENVIRONMENT container
+ENV APP_ENVIRONMENT production
 ENTRYPOINT ["./newsletter"]

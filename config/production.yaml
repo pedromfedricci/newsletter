@@ -1,0 +1,3 @@
+database:
+  require_ssl: true
+  host: localhost
