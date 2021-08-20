@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 pub(crate) struct SubscriberName(String);
 
 impl SubscriberName {
-    pub(crate) fn parse(name: String) -> Result<Self, NameParseError> {
+    pub(crate) fn parse(name: String) -> Result<Self, SubscriberNameParseError> {
         let is_empty_or_whitespace = name.trim().is_empty();
 
         let is_too_long = name.graphemes(true).count() > 256;
@@ -13,7 +13,7 @@ impl SubscriberName {
         let has_forbidden_characters = name.chars().any(|g| forbidden_characters.contains(&g));
 
         if is_empty_or_whitespace || is_too_long || has_forbidden_characters {
-            Err(NameParseError)
+            Err(SubscriberNameParseError)
         } else {
             Ok(Self(name))
         }
@@ -27,9 +27,9 @@ impl AsRef<str> for SubscriberName {
 }
 
 #[derive(Debug)]
-pub(crate) struct NameParseError;
+pub(crate) struct SubscriberNameParseError;
 
-impl std::fmt::Display for NameParseError {
+impl std::fmt::Display for SubscriberNameParseError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fmt.write_str("could not parse provided String as a SubscriberName")
     }

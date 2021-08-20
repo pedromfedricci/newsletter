@@ -1,8 +1,5 @@
 use crate::helpers::{spawn_app, url_from};
-//use libnewsletter::config;
-//use sqlx::{Connection, PgConnection};
 
-//
 #[actix_rt::test]
 async fn test_subscribe_valid_data() {
     let test_app = spawn_app().await;
@@ -59,6 +56,35 @@ async fn test_subscribe_missing_data() {
             response.status().as_u16(),
             "The API did not fail with 400 Bad Request when the payload was {}.",
             error_message
+        );
+    }
+}
+
+#[actix_rt::test]
+async fn test_subscribe_invalid_data() {
+    let test_app = spawn_app().await;
+
+    let test_cases = vec![
+        ("name=&email=ursula_le_guin%40gmail.com", "empty name"),
+        ("name=Ursula&email=", "empty email"),
+        ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+    ];
+
+    let client = reqwest::Client::new();
+    for (invalid_body, description) in test_cases {
+        let response = client
+            .post(url_from(&test_app.addr, "/subscriptions"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not return a 400 Bad Request when the payload was {}.",
+            description
         );
     }
 }

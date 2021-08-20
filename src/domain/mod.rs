@@ -1,10 +1,7 @@
-use self::{subscriber_email::SubscriberEmail, subscriber_name::SubscriberName};
+mod new_subscriber;
+mod subscriber_email;
+mod subscriber_name;
 
-pub(crate) mod subscriber_email;
-pub(crate) mod subscriber_name;
-
-#[derive(Debug)]
-pub(crate) struct NewSubscriber {
-    pub(crate) email: SubscriberEmail,
-    pub(crate) name: SubscriberName,
-}
+pub(crate) use new_subscriber::{NewSubscriber, SubscriberParseError};
+pub(crate) use subscriber_email::SubscriberEmail;
+pub(crate) use subscriber_name::SubscriberName;
