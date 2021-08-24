@@ -1,12 +1,13 @@
 name: Security Audit
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - '**/Cargo.toml'
+  #     - '**/Cargo.lock'
   # schedule:
   #   - cron: '0 0 * * *'
 jobs:
