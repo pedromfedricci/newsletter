@@ -1,2 +1,4 @@
 database:
   host: database
+email_client:
+  sender_email: newsletter@devcontainer.com

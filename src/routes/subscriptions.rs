@@ -1,3 +1,7 @@
+// temporarly workaround for clippy incorrect
+// lint at crate::routes::subscription::subscribe
+#![allow(clippy::async_yields_async)]
+
 use actix_web::{
     web::{Data, Form},
     HttpResponse,

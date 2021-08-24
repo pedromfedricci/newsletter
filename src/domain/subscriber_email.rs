@@ -1,7 +1,7 @@
 use validator::validate_email;
 
 #[derive(Debug)]
-pub(crate) struct SubscriberEmail(String);
+pub struct SubscriberEmail(String);
 
 impl SubscriberEmail {
     pub(crate) fn parse(email: String) -> Result<Self, SubscriberEmailParseError> {
@@ -19,7 +19,7 @@ impl AsRef<str> for SubscriberEmail {
 }
 
 #[derive(Debug)]
-pub(crate) struct SubscriberEmailParseError;
+pub struct SubscriberEmailParseError;
 
 impl std::fmt::Display for SubscriberEmailParseError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

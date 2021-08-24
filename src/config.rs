@@ -5,13 +5,16 @@ use std::{
     net::{IpAddr, SocketAddr, ToSocketAddrs},
 };
 
-#[derive(Debug, serde::Deserialize)]
+use crate::domain::{SubscriberEmail, SubscriberEmailParseError};
+
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
+    pub email_client: EmailClientSettings,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct ApplicationSettings {
     pub ip: IpAddr,
     pub port: u16,
@@ -26,7 +29,20 @@ impl ToSocketAddrs for ApplicationSettings {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct EmailClientSettings {
+    pub base_url: String,
+    pub sender_email: String,
+    pub authorization_token: String,
+}
+
+impl EmailClientSettings {
+    pub fn sender(&self) -> Result<SubscriberEmail, SubscriberEmailParseError> {
+        SubscriberEmail::parse(self.sender_email.clone())
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct DatabaseSettings {
     pub database_name: String,
     pub username: String,

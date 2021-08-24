@@ -1,6 +1,4 @@
-use libnewsletter::{config, startup, telemetry};
-use sqlx::postgres::PgPoolOptions;
-use std::net::TcpListener;
+use libnewsletter::{config, startup::Application, telemetry};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -8,12 +6,9 @@ async fn main() -> std::io::Result<()> {
     telemetry::init_subscriber(subscriber);
 
     let config = config::settings().expect("Failed to read configuration");
-    let listener = TcpListener::bind(&config.application)?;
-    let db_pool = PgPoolOptions::new()
-        .connect_timeout(std::time::Duration::from_secs(10))
-        .connect_with(config.database.connection_with_db())
-        .await
-        .expect("Failed to connect to database");
+    let application = Application::build(config).await?;
 
-    startup::run(listener, db_pool)?.await
+    application.run_until_stopped().await?;
+
+    Ok(())
 }
