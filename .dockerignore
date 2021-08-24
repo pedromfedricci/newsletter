@@ -13,4 +13,5 @@ tests/
 .gitignore
 docker-compose.yaml
 Dockerfile
+Makefile.toml
 spec.yaml
