@@ -1,4 +1,4 @@
-ARG RUST_VERSION=1.54.0
+ARG RUST_VERSION=1.53.0
 ARG CARGO_CHEF_VERSION=latest
 ARG CARGO_CHEF_IMAGE=lukemathwalker/cargo-chef:${CARGO_CHEF_VERSION}-rust-${RUST_VERSION}
 
@@ -25,7 +25,9 @@ COPY --from=cacher /usr/local/cargo /usr/local/cargo
 COPY . .
 
 ENV SQLX_OFFLINE true
-RUN cargo build --release --bin newsletter
+RUN cargo build --release --bin newsletter \
+    && \
+    strip target/release/newsletter
 
 FROM debian:buster-slim AS runtime
 
