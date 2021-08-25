@@ -18,6 +18,7 @@ pub struct Settings {
 pub struct ApplicationSettings {
     pub ip: IpAddr,
     pub port: u16,
+    pub base_url: String,
 }
 
 impl ToSocketAddrs for ApplicationSettings {

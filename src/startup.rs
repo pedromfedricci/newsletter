@@ -7,7 +7,7 @@ use tracing_actix_web::TracingLogger;
 use crate::{
     config::{DatabaseSettings, Settings},
     email_client::EmailClient,
-    routes::{health_check::health_check, subscriptions::subscribe},
+    routes::{confirm, health_check, subscribe},
 };
 
 #[derive(Debug)]
@@ -33,10 +33,15 @@ impl Application {
             config.email_client.authorization_token,
         );
 
-        let listener = TcpListener::bind(config.application)?;
+        let listener = TcpListener::bind(&config.application)?;
         let port = listener.local_addr().unwrap().port();
 
-        let server = run(listener, email_client, connection_pool)?;
+        let server = run(
+            listener,
+            email_client,
+            connection_pool,
+            &config.application.base_url,
+        )?;
 
         Ok(Self { port, server })
     }
@@ -50,21 +55,31 @@ impl Application {
     }
 }
 
+// We need to define a wrapper type in order to retrieve the URL
+// in the `subscribe` handler.
+// Retrieval from the context, in actix-web, is type-based: using
+// a raw `String` would expose us to conflicts.
+pub struct ApplicationBaseUrl(pub String);
+
 pub fn run(
     listener: TcpListener,
     email_client: EmailClient,
     db_pool: PgPool,
+    base_url: &String,
 ) -> std::io::Result<Server> {
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
+    let base_url = web::Data::new(ApplicationBaseUrl(base_url.to_string()));
 
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
+            .app_data(base_url.clone())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
+            .route("/subscriptions/confirm", web::get().to(confirm))
     })
     .listen(listener)?
     .run();
