@@ -1,3 +1,7 @@
+// temporarly workaround for clippy incorrect
+// lint at crate::routes::subscription_confirm::confirm
+#![allow(clippy::async_yields_async)]
+
 use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;

@@ -65,7 +65,7 @@ pub fn run(
     listener: TcpListener,
     email_client: EmailClient,
     db_pool: PgPool,
-    base_url: &String,
+    base_url: &str,
 ) -> std::io::Result<Server> {
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
