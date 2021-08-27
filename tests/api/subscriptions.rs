@@ -123,3 +123,18 @@ async fn subscribe_persists_the_new_subscriber() {
     assert_eq!(saved.name, test_name);
     assert_eq!(saved.status, test_status);
 }
+
+#[actix_rt::test]
+async fn subscribe_fails_if_there_is_a_fatal_database_error() {
+    let test_app = spawn_app().await;
+
+    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
+        .execute(&test_app.db_pool)
+        .await
+        .unwrap();
+
+    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = test_app.post_subscriptions(test_body.into()).await;
+
+    assert_eq!(response.status().as_u16(), 500);
+}
