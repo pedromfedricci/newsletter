@@ -26,14 +26,9 @@ impl AsRef<str> for SubscriberName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("Failed to parse provided String as a SubscriberName")]
 pub(crate) struct SubscriberNameParseError;
-
-impl std::fmt::Display for SubscriberNameParseError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt.write_str("could not parse provided String as a SubscriberName")
-    }
-}
 
 #[cfg(test)]
 mod tests {

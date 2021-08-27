@@ -18,14 +18,9 @@ impl AsRef<str> for SubscriberEmail {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("Failed to parse provided String as a SubscriberEmail")]
 pub struct SubscriberEmailParseError;
-
-impl std::fmt::Display for SubscriberEmailParseError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt.write_str("could not parse provided String as a SubscriberEmail")
-    }
-}
 
 #[cfg(test)]
 mod tests {

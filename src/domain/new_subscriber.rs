@@ -7,29 +7,10 @@ pub(crate) struct NewSubscriber {
     pub(crate) name: SubscriberName,
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub(crate) enum SubscriberParseError {
-    Email(SubscriberEmailParseError),
-    Name(SubscriberNameParseError),
-}
-
-impl From<SubscriberEmailParseError> for SubscriberParseError {
-    fn from(err: SubscriberEmailParseError) -> Self {
-        Self::Email(err)
-    }
-}
-
-impl From<SubscriberNameParseError> for SubscriberParseError {
-    fn from(err: SubscriberNameParseError) -> Self {
-        Self::Name(err)
-    }
-}
-
-impl std::fmt::Display for SubscriberParseError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            Self::Email(err) => write!(fmt, "{}", err),
-            Self::Name(err) => write!(fmt, "{}", err),
-        }
-    }
+    #[error(transparent)]
+    Email(#[from] SubscriberEmailParseError),
+    #[error(transparent)]
+    Name(#[from] SubscriberNameParseError),
 }
