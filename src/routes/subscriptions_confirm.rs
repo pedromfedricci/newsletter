@@ -1,10 +1,10 @@
-// temporarly workaround for clippy incorrect
-// lint at crate::routes::subscription_confirm::confirm
-#![allow(clippy::async_yields_async)]
-
-use actix_web::{web, HttpResponse};
+use actix_http::StatusCode;
+use actix_web::{web, HttpResponse, ResponseError};
+use anyhow::Context;
 use sqlx::PgPool;
 use uuid::Uuid;
+
+use crate::routes::error_chain_fmt;
 
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct Parameters {
@@ -15,22 +15,17 @@ pub(crate) struct Parameters {
 pub(crate) async fn confirm(
     params: web::Query<Parameters>,
     db_pool: web::Data<PgPool>,
-) -> HttpResponse {
-    let id = match get_subscriber_id_from_token(&db_pool, &params.subscription_token).await {
-        Ok(id) => id,
-        Err(_) => return HttpResponse::InternalServerError().finish(),
-    };
+) -> Result<HttpResponse, SubscriptionConfirmError> {
+    let subscriber_id = get_subscriber_id_from_token(&db_pool, &params.subscription_token)
+        .await
+        .context("Failed to query subscriber id from database")?
+        .ok_or(SubscriptionConfirmError::TokenNotFound)?;
 
-    match id {
-        // Non-existing token!
-        None => HttpResponse::Unauthorized().finish(),
-        Some(subscriber_id) => {
-            if confirm_subscriber(&db_pool, subscriber_id).await.is_err() {
-                return HttpResponse::InternalServerError().finish();
-            }
-            HttpResponse::Ok().finish()
-        }
-    }
+    confirm_subscriber(&db_pool, subscriber_id)
+        .await
+        .context("Failed to confirm subscription status on database")?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[tracing::instrument(name = "Mark subscriber as confirmed", skip(subscriber_id, db_pool))]
@@ -40,11 +35,7 @@ pub async fn confirm_subscriber(db_pool: &PgPool, subscriber_id: Uuid) -> Result
         subscriber_id,
     )
     .execute(db_pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to execute query: {:?}", e);
-        e
-    })?;
+    .await?;
 
     Ok(())
 }
@@ -62,11 +53,30 @@ pub async fn get_subscriber_id_from_token(
         subscription_token,
     )
     .fetch_optional(db_pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to execute query: {:?}", e);
-        e
-    })?;
+    .await?;
 
     Ok(result.map(|r| r.subscriber_id))
+}
+
+#[derive(thiserror::Error)]
+pub(crate) enum SubscriptionConfirmError {
+    #[error("Failed to match provided token, was not found in the database")]
+    TokenNotFound,
+    #[error(transparent)]
+    UnexpectedError(#[from] anyhow::Error),
+}
+
+impl std::fmt::Debug for SubscriptionConfirmError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+
+impl ResponseError for SubscriptionConfirmError {
+    fn status_code(&self) -> actix_http::StatusCode {
+        match self {
+            Self::TokenNotFound => StatusCode::UNAUTHORIZED,
+            Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
 }
