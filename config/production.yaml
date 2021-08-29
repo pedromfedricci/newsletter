@@ -1,6 +1,5 @@
 database:
   require_ssl: true
-  host: localhost
 email_client:
   base_url: "https://api.postmarkapp.com"
   sender_email: "pedromfedricci@gmail.com"

@@ -1,8 +1,10 @@
 mod health_check;
+mod newsletters;
 mod subscriptions;
 mod subscriptions_confirm;
 
 pub(crate) use health_check::health_check;
+pub(crate) use newsletters::pubish_newsletter;
 pub(crate) use subscriptions::subscribe;
 pub(crate) use subscriptions_confirm::confirm;
 

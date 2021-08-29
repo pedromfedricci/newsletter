@@ -18,6 +18,12 @@ impl AsRef<str> for SubscriberEmail {
     }
 }
 
+impl std::fmt::Display for SubscriberEmail {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 #[error("Failed to parse provided String as a SubscriberEmail")]
 pub struct SubscriberEmailParseError;
