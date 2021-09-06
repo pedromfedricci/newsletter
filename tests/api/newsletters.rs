@@ -4,7 +4,7 @@ use wiremock::{
     Mock, ResponseTemplate,
 };
 
-use crate::helpers::{spawn_app, ConfirmationLinks, TestApp};
+use crate::helpers::{spawn_app, url_from, ConfirmationLinks, TestApp};
 
 #[actix_rt::test]
 async fn newsletters_are_not_sent_to_unconfirmed_subscribers() {
@@ -102,6 +102,24 @@ async fn create_confirmed_subscriber(test_app: &TestApp) {
         .unwrap();
 }
 
+#[actix_rt::test]
+async fn request_missing_authorization_is_rejected() {
+    let test_app = spawn_app().await;
+
+    let response = reqwest::Client::new()
+        .post(url_from(&test_app.addr, "/newsletters"))
+        .json(&newsletter_test_body())
+        .send()
+        .await
+        .expect("Failed to execute request");
+
+    assert_eq!(401, response.status().as_u16());
+    assert_eq!(
+        r#"Basic realm="publish""#,
+        response.headers()["WWW-Authenticate"]
+    );
+}
+
 fn newsletter_test_body() -> Value {
     serde_json::json!({
         "title": newsletter_test_body_title(),
@@ -115,8 +133,7 @@ fn newsletter_test_body_title() -> Value {
 
 fn newsletter_test_body_content() -> Value {
     serde_json::json!({
-            "text": "Newsletter body as plain text",
-            "html": "<p>Newsletter body as HTML<p>",
-
+        "text": "Newsletter body as plain text",
+        "html": "<p>Newsletter body as HTML<p>",
     })
 }

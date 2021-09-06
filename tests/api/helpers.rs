@@ -6,6 +6,7 @@ use libnewsletter::{
 
 use once_cell::sync::Lazy;
 use reqwest::Url;
+use sha3::Digest;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::SocketAddr;
 use uuid::Uuid;
@@ -24,16 +25,51 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     }
 });
 
-pub(crate) struct TestApp {
-    pub(crate) addr: SocketAddr,
-    pub(crate) db_pool: PgPool,
-    pub(crate) email_server: MockServer,
-}
-
 /// Confirmation links embedded in the request to the email API.
 pub(crate) struct ConfirmationLinks {
     pub(crate) html: reqwest::Url,
     pub(crate) plain_text: reqwest::Url,
+}
+
+pub(crate) struct TestUser {
+    pub(crate) user_id: Uuid,
+    pub(crate) username: String,
+    pub(crate) password: String,
+}
+
+impl TestUser {
+    pub(crate) fn generate() -> Self {
+        Self {
+            user_id: Uuid::new_v4(),
+            username: Uuid::new_v4().to_string(),
+            password: Uuid::new_v4().to_string(),
+        }
+    }
+
+    pub(crate) async fn store(&self, pool: &PgPool) {
+        let password_hash = {
+            let hash = sha3::Sha3_256::digest(self.password.as_bytes());
+            format!("{:x}", hash)
+        };
+
+        sqlx::query!(
+            "INSERT INTO users (user_id, username, password_hash)
+        VALUES ($1, $2, $3)",
+            self.user_id,
+            self.username,
+            password_hash,
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user.");
+    }
+}
+
+pub(crate) struct TestApp {
+    pub(crate) addr: SocketAddr,
+    pub(crate) db_pool: PgPool,
+    pub(crate) email_server: MockServer,
+    pub(crate) user: TestUser,
 }
 
 impl TestApp {
@@ -74,6 +110,7 @@ impl TestApp {
     pub async fn post_newsletters(&self, body: &serde_json::Value) -> reqwest::Response {
         reqwest::Client::new()
             .post(url_from(&self.addr, "/newsletters"))
+            .basic_auth(&self.user.username, Some(&self.user.password))
             .json(body)
             .send()
             .await
@@ -120,6 +157,11 @@ pub(crate) async fn spawn_app() -> TestApp {
         .await
         .expect("Failed to build application");
     let addr = SocketAddr::from(([127, 0, 0, 1], application.port()));
+    let user = {
+        let user = TestUser::generate();
+        user.store(&db_pool).await;
+        user
+    };
 
     // Spawn application intance
     tokio::spawn(application.run_until_stopped());
@@ -128,6 +170,7 @@ pub(crate) async fn spawn_app() -> TestApp {
         addr,
         db_pool,
         email_server,
+        user,
     }
 }
 
