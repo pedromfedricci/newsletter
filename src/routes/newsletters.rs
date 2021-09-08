@@ -3,11 +3,14 @@ use actix_web::{
     web, HttpResponse, ResponseError,
 };
 use anyhow::Context;
-use sha3::Digest;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{domain::SubscriberEmail, email_client::EmailClient, routes::error_chain_fmt};
+use crate::{
+    domain::SubscriberEmail, email_client::EmailClient, routes::error_chain_fmt,
+    telemetry::spawn_blocking_with_tracing,
+};
 
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct NewsletterBody {
@@ -136,32 +139,80 @@ fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Erro
     Ok(Credentials { username, password })
 }
 
+static DUMMY_HASH: &str = "$argon2id$v=19$m=15000,t=2,p=1$\
+    gZiV/M1gPc22ElAH/Jh1Hw$\
+    CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno";
+
+#[tracing::instrument(
+    name = "Validate credentials"
+    skip(credentials, db_pool)
+)]
 async fn validate_credentials(
     credentials: Credentials,
     db_pool: &PgPool,
 ) -> Result<Uuid, PublishError> {
-    let password_hash = {
-        let hash = sha3::Sha3_256::digest(credentials.password.as_bytes());
-        format!("{:x}", hash)
-    };
+    let mut user_id = None;
+    let mut expected_password_hash = DUMMY_HASH.to_string();
 
-    let user_id: Option<_> = sqlx::query!(
+    if let Some((stored_user_id, stored_password_hash)) =
+        get_stored_credentials(&credentials.username, db_pool)
+            .await
+            .map_err(PublishError::UnexpectedError)?
+    {
+        user_id = Some(stored_user_id);
+        expected_password_hash = stored_password_hash;
+    }
+
+    spawn_blocking_with_tracing(move || {
+        verify_password_hash(expected_password_hash, credentials.password)
+    })
+    .await
+    .context("Failed to spawn blocking task")
+    .map_err(PublishError::UnexpectedError)?
+    .await?;
+
+    user_id.ok_or_else(|| PublishError::AuthError(anyhow::anyhow!("Unknown username.")))
+}
+
+#[tracing::instrument(
+    name = "Get store credentials"
+    skip(username, db_pool)
+)]
+async fn get_stored_credentials(
+    username: &str,
+    db_pool: &PgPool,
+) -> Result<Option<(Uuid, String)>, anyhow::Error> {
+    let row = sqlx::query!(
         r#"
-        SELECT user_id
+        SELECT user_id, password_hash
         FROM users
-        WHERE username = $1 AND password_hash = $2
+        WHERE username = $1
         "#,
-        credentials.username,
-        password_hash
+        username,
     )
     .fetch_optional(db_pool)
     .await
-    .context("Failed to perform a query to validate auth credentials")
-    .map_err(PublishError::UnexpectedError)?;
+    .context("Failed to perform a query to validate auth credentials")?
+    .map(|row| (row.user_id, row.password_hash));
 
-    user_id
-        .map(|row| row.user_id)
-        .ok_or_else(|| anyhow::anyhow!("Invalid username or password"))
+    Ok(row)
+}
+
+#[tracing::instrument(
+    name = "Verify password hash"
+    skip(expected_password_hash, password_candidate)
+)]
+async fn verify_password_hash(
+    expected_password_hash: String,
+    password_candidate: String,
+) -> Result<(), PublishError> {
+    let expected_password_hash = PasswordHash::new(&expected_password_hash)
+        .context("Failed to parse hash in PHC string format")
+        .map_err(PublishError::UnexpectedError)?;
+
+    Argon2::default()
+        .verify_password(password_candidate.as_bytes(), &expected_password_hash)
+        .context("Invalid password")
         .map_err(PublishError::AuthError)
 }
 

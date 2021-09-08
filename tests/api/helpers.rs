@@ -1,3 +1,4 @@
+use argon2::{password_hash::SaltString, Algorithm, Argon2, Params, PasswordHasher, Version};
 use libnewsletter::{
     config::{self, DatabaseSettings},
     startup::{get_connection_pool, Application},
@@ -6,7 +7,6 @@ use libnewsletter::{
 
 use once_cell::sync::Lazy;
 use reqwest::Url;
-use sha3::Digest;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::SocketAddr;
 use uuid::Uuid;
@@ -48,8 +48,15 @@ impl TestUser {
 
     pub(crate) async fn store(&self, pool: &PgPool) {
         let password_hash = {
-            let hash = sha3::Sha3_256::digest(self.password.as_bytes());
-            format!("{:x}", hash)
+            let salt = SaltString::generate(&mut rand::thread_rng());
+            Argon2::new(
+                Algorithm::Argon2id,
+                Version::V0x13,
+                Params::new(15000, 2, 1, None).unwrap(),
+            )
+            .hash_password(self.password.as_bytes(), &salt)
+            .unwrap()
+            .to_string()
         };
 
         sqlx::query!(
