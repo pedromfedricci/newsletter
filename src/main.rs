@@ -1,6 +1,6 @@
 use libnewsletter::{config, startup::Application, telemetry};
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     let subscriber = telemetry::get_subscriber("newsletter".into(), "info".into(), std::io::stdout);
     telemetry::init_subscriber(subscriber);

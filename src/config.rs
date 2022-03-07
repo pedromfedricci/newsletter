@@ -1,9 +1,8 @@
+use std::convert::{TryFrom, TryInto};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+
 use config::{Config, ConfigError};
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
-use std::{
-    convert::{TryFrom, TryInto},
-    net::{IpAddr, SocketAddr, ToSocketAddrs},
-};
 
 use crate::domain::{SubscriberEmail, SubscriberEmailParseError};
 
@@ -26,7 +25,7 @@ impl ToSocketAddrs for ApplicationSettings {
 
     fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
         let socket = SocketAddr::from((self.ip, self.port));
-        Ok(std::array::IntoIter::new([socket; 1]))
+        Ok([socket; 1].into_iter())
     }
 }
 

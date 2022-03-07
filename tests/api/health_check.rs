@@ -4,7 +4,7 @@ use crate::helpers::{spawn_app, url_from};
 // * the health check is exposed at /health_check;
 // * the health check is behind a GET method;
 // * the health check response has no body.
-#[actix_rt::test]
+#[tokio::test]
 async fn test_health_check() {
     let test_app = spawn_app().await;
 

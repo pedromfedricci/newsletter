@@ -1,11 +1,9 @@
-use wiremock::{
-    matchers::{method, path},
-    Mock, ResponseTemplate,
-};
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, ResponseTemplate};
 
 use crate::helpers::spawn_app;
 
-#[actix_rt::test]
+#[tokio::test]
 async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
     let test_app = spawn_app().await;
 

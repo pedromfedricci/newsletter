@@ -5,7 +5,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 env:
@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SQLX_VERSION: 0.5.5
-      SQLX_FEATURES: postgres
+      SQLX_VERSION: 0.5.11
+      SQLX_FEATURES: postgres,native-tls
 
     steps:
       - name: Install stable toolchain
@@ -35,11 +35,11 @@ jobs:
             ~/.cargo/bin/sqlx
           key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
 
-      - name: Install sqlx-cli 
+      - name: Install sqlx-cli
         uses: actions-rs/cargo@v1
         if: steps.cache-sqlx.outputs.cache-hit == false
         with:
-          command: install 
+          command: install
           args: >
             sqlx-cli
             --force
@@ -55,7 +55,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:12
+        image: postgres:13
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
@@ -105,7 +105,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
 
-      - name : Run tests
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
@@ -138,7 +138,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:12
+        image: postgres:13
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
@@ -202,7 +202,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:12
+        image: postgres:13
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password

@@ -5,7 +5,7 @@ use wiremock::{
 
 use crate::helpers::spawn_app;
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_returns_a_400_when_data_is_missing() {
     let test_app = spawn_app().await;
 
@@ -27,7 +27,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
     }
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     let test_app = spawn_app().await;
 
@@ -49,7 +49,7 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     }
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let test_app = spawn_app().await;
 
@@ -65,7 +65,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     assert_eq!(200, response.status().as_u16());
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     let test_app = spawn_app().await;
 
@@ -81,7 +81,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     // Assert on MockServer drop
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_sends_a_confirmation_email_with_a_link() {
     let test_app = spawn_app().await;
 
@@ -100,7 +100,7 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
     assert_eq!(confirmation_links.html, confirmation_links.plain_text);
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_persists_the_new_subscriber() {
     let test_app = spawn_app().await;
 
@@ -114,7 +114,7 @@ async fn subscribe_persists_the_new_subscriber() {
     );
     test_app.post_subscriptions(test_body.into()).await;
 
-    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions")
         .fetch_one(&test_app.db_pool)
         .await
         .expect("Failed to fetch saved subscription.");
@@ -124,11 +124,11 @@ async fn subscribe_persists_the_new_subscriber() {
     assert_eq!(saved.status, test_status);
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn subscribe_fails_if_there_is_a_fatal_database_error() {
     let test_app = spawn_app().await;
 
-    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
+    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email")
         .execute(&test_app.db_pool)
         .await
         .unwrap();

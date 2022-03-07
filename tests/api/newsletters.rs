@@ -7,7 +7,7 @@ use wiremock::{
 
 use crate::helpers::{spawn_app, url_from, ConfirmationLinks, TestApp};
 
-#[actix_rt::test]
+#[tokio::test]
 async fn newsletters_are_not_sent_to_unconfirmed_subscribers() {
     let test_app = spawn_app().await;
 
@@ -25,7 +25,7 @@ async fn newsletters_are_not_sent_to_unconfirmed_subscribers() {
     // Assert no request were sent to MockServer on shutdown.
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn newsletter_are_delivered_to_confirmed_subscribers() {
     let test_app = spawn_app().await;
 
@@ -44,7 +44,7 @@ async fn newsletter_are_delivered_to_confirmed_subscribers() {
     // Assert that one request was sent to MockServer on shutdown.
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn newsletters_return_400_for_invalid_data() {
     let test_app = spawn_app().await;
 
@@ -103,7 +103,7 @@ async fn create_confirmed_subscriber(test_app: &TestApp) {
         .unwrap();
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn request_missing_authorization_is_rejected() {
     let test_app = spawn_app().await;
 
@@ -121,7 +121,7 @@ async fn request_missing_authorization_is_rejected() {
     );
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn non_existing_user_is_rejected() {
     let test_app = spawn_app().await;
 
@@ -143,7 +143,7 @@ async fn non_existing_user_is_rejected() {
     );
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn invalid_password_is_rejected() {
     let test_app = spawn_app().await;
 

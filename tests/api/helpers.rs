@@ -1,16 +1,14 @@
 use argon2::{password_hash::SaltString, Algorithm, Argon2, Params, PasswordHasher, Version};
-use libnewsletter::{
-    config::{self, DatabaseSettings},
-    startup::{get_connection_pool, Application},
-    telemetry,
-};
-
 use once_cell::sync::Lazy;
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::SocketAddr;
 use uuid::Uuid;
 use wiremock::MockServer;
+
+use libnewsletter::config::{self, DatabaseSettings};
+use libnewsletter::startup::{get_connection_pool, Application};
+use libnewsletter::telemetry;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     let default_filter = "info".to_string();
@@ -60,8 +58,7 @@ impl TestUser {
         };
 
         sqlx::query!(
-            "INSERT INTO users (user_id, username, password_hash)
-        VALUES ($1, $2, $3)",
+            "INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)",
             self.user_id,
             self.username,
             password_hash,

@@ -1,7 +1,7 @@
-use actix_web::{
-    http::{header, HeaderMap, HeaderValue, StatusCode},
-    web, HttpResponse, ResponseError,
-};
+use actix_web::http::header::{self, HeaderMap, HeaderValue};
+use actix_web::http::StatusCode;
+use actix_web::web::{Data, Json};
+use actix_web::{HttpRequest, HttpResponse, ResponseError};
 use anyhow::Context;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use sqlx::PgPool;
@@ -39,10 +39,10 @@ struct Credentials {
     fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
 )]
 pub(crate) async fn pubish_newsletter(
-    body: web::Json<NewsletterBody>,
-    db_pool: web::Data<PgPool>,
-    email_client: web::Data<EmailClient>,
-    request: web::HttpRequest,
+    body: Json<NewsletterBody>,
+    db_pool: Data<PgPool>,
+    email_client: Data<EmailClient>,
+    request: HttpRequest,
 ) -> Result<HttpResponse, PublishError> {
     let _user_id = {
         let credentials =

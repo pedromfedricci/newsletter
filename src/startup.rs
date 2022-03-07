@@ -4,13 +4,10 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 
-use crate::{
-    config::{DatabaseSettings, Settings},
-    email_client::EmailClient,
-    routes::{confirm, health_check, pubish_newsletter, subscribe},
-};
+use crate::config::{DatabaseSettings, Settings};
+use crate::email_client::EmailClient;
+use crate::routes::{confirm, health_check, pubish_newsletter, subscribe};
 
-#[derive(Debug)]
 pub struct Application {
     port: u16,
     server: Server,

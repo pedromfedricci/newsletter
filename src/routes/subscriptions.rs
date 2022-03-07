@@ -1,8 +1,6 @@
-use actix_http::StatusCode;
-use actix_web::{
-    web::{Data, Form},
-    HttpResponse, ResponseError,
-};
+use actix_web::http::StatusCode;
+use actix_web::web::{Data, Form};
+use actix_web::{HttpResponse, ResponseError};
 use anyhow::Context;
 use chrono::Utc;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
@@ -10,12 +8,10 @@ use sqlx::{PgPool, Postgres, Transaction};
 use std::convert::TryInto;
 use uuid::Uuid;
 
-use crate::{
-    domain::{NewSubscriber, SubscriberEmail, SubscriberName, SubscriberParseError},
-    email_client::EmailClient,
-    routes::error_chain_fmt,
-    startup::ApplicationBaseUrl,
-};
+use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName, SubscriberParseError};
+use crate::email_client::EmailClient;
+use crate::routes::error_chain_fmt;
+use crate::startup::ApplicationBaseUrl;
 
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct SubscriberForm {
@@ -104,10 +100,7 @@ pub(crate) async fn insert_subscriber(
     let subscriber_id = Uuid::new_v4();
 
     sqlx::query!(
-        r#"
-        INSERT INTO subscriptions (id, email, name, subscribed_at, status)
-        VALUES ($1, $2, $3, $4, 'pending_confirmation')
-        "#,
+        "INSERT INTO subscriptions (id, email, name, subscribed_at, status) VALUES ($1, $2, $3, $4, 'pending_confirmation')",
         subscriber_id,
         new_subscriber.email.as_ref(),
         new_subscriber.name.as_ref(),
@@ -159,10 +152,7 @@ pub(crate) async fn store_token(
     subscription_token: &str,
 ) -> Result<(), StoreTokenError> {
     sqlx::query!(
-        r#"
-        INSERT INTO subscription_tokens (subscription_token, subscriber_id)
-        VALUES ($1, $2)
-        "#,
+        "INSERT INTO subscription_tokens (subscription_token, subscriber_id) VALUES ($1, $2)",
         subscription_token,
         subscriber_id
     )
@@ -197,7 +187,7 @@ impl std::fmt::Debug for SubscriberError {
 }
 
 impl ResponseError for SubscriberError {
-    fn status_code(&self) -> actix_http::StatusCode {
+    fn status_code(&self) -> StatusCode {
         match self {
             Self::ValidationError(_) => StatusCode::BAD_REQUEST,
             Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,

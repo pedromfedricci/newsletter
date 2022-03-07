@@ -1,5 +1,4 @@
-use actix_http::StatusCode;
-use actix_web::{web, HttpResponse, ResponseError};
+use actix_web::{http::StatusCode, web, HttpResponse, ResponseError};
 use anyhow::Context;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -31,7 +30,7 @@ pub(crate) async fn confirm(
 #[tracing::instrument(name = "Mark subscriber as confirmed", skip(subscriber_id, db_pool))]
 pub async fn confirm_subscriber(db_pool: &PgPool, subscriber_id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query!(
-        r#"UPDATE subscriptions SET status = 'confirmed' WHERE id = $1"#,
+        "UPDATE subscriptions SET status = 'confirmed' WHERE id = $1",
         subscriber_id,
     )
     .execute(db_pool)
@@ -49,7 +48,7 @@ pub async fn get_subscriber_id_from_token(
     subscription_token: &str,
 ) -> Result<Option<Uuid>, sqlx::Error> {
     let result = sqlx::query!(
-        r#"SELECT subscriber_id FROM subscription_tokens WHERE subscription_token = $1"#,
+        "SELECT subscriber_id FROM subscription_tokens WHERE subscription_token = $1",
         subscription_token,
     )
     .fetch_optional(db_pool)
@@ -73,7 +72,7 @@ impl std::fmt::Debug for SubscriptionConfirmError {
 }
 
 impl ResponseError for SubscriptionConfirmError {
-    fn status_code(&self) -> actix_http::StatusCode {
+    fn status_code(&self) -> StatusCode {
         match self {
             Self::TokenNotFound => StatusCode::UNAUTHORIZED,
             Self::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
