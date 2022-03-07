@@ -6,7 +6,5 @@ pub fn e500<T>(e: T) -> actix_web::error::InternalError<T> {
 }
 
 pub fn _see_other(location: &str) -> HttpResponse {
-    HttpResponse::SeeOther()
-        .insert_header((LOCATION, location))
-        .finish()
+    HttpResponse::SeeOther().insert_header((LOCATION, location)).finish()
 }

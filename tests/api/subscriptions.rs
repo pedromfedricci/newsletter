@@ -107,11 +107,8 @@ async fn subscribe_persists_the_new_subscriber() {
     let test_status = "pending_confirmation";
     let test_name = "le guin";
     let test_email = "ursula_le_guin@gmail.com";
-    let test_body = format!(
-        "name={}&email={}",
-        test_name.replace(" ", "%20"),
-        test_email.replace("@", "%40")
-    );
+    let test_body =
+        format!("name={}&email={}", test_name.replace(" ", "%20"), test_email.replace("@", "%40"));
     test_app.post_subscriptions(test_body.into()).await;
 
     let saved = sqlx::query!("SELECT email, name, status FROM subscriptions")

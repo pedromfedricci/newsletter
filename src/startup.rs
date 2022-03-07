@@ -15,14 +15,10 @@ pub struct Application {
 
 impl Application {
     pub async fn build(config: Settings) -> Result<Self, std::io::Error> {
-        let connection_pool = get_connection_pool(&config.database)
-            .await
-            .expect("Failed to connect to Postgres.");
+        let connection_pool =
+            get_connection_pool(&config.database).await.expect("Failed to connect to Postgres.");
 
-        let sender_email = config
-            .email_client
-            .sender()
-            .expect("Invalid sender email address.");
+        let sender_email = config.email_client.sender().expect("Invalid sender email address.");
 
         let email_client = EmailClient::new(
             Url::parse(&config.email_client.base_url).unwrap(),
@@ -33,12 +29,7 @@ impl Application {
         let listener = TcpListener::bind(&config.application)?;
         let port = listener.local_addr().unwrap().port();
 
-        let server = run(
-            listener,
-            email_client,
-            connection_pool,
-            &config.application.base_url,
-        )?;
+        let server = run(listener, email_client, connection_pool, &config.application.base_url)?;
 
         Ok(Self { port, server })
     }

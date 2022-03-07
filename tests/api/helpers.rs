@@ -154,12 +154,10 @@ pub(crate) async fn spawn_app() -> TestApp {
     // Create and migrate the database
     configure_database(&config.database).await;
 
-    let db_pool = get_connection_pool(&config.database)
-        .await
-        .expect("Failed to connect to the database");
-    let application = Application::build(config.clone())
-        .await
-        .expect("Failed to build application");
+    let db_pool =
+        get_connection_pool(&config.database).await.expect("Failed to connect to the database");
+    let application =
+        Application::build(config.clone()).await.expect("Failed to build application");
     let addr = SocketAddr::from(([127, 0, 0, 1], application.port()));
     let user = {
         let user = TestUser::generate();
@@ -170,12 +168,7 @@ pub(crate) async fn spawn_app() -> TestApp {
     // Spawn application intance
     tokio::spawn(application.run_until_stopped());
 
-    TestApp {
-        addr,
-        db_pool,
-        email_server,
-        user,
-    }
+    TestApp { addr, db_pool, email_server, user }
 }
 
 async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
@@ -185,12 +178,9 @@ async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
         .expect("Failed to connect to database host");
 
     // Create new database.
-    conn.execute(&*format!(
-        r#"CREATE DATABASE "{}";"#,
-        db_settings.database_name
-    ))
-    .await
-    .expect("Failed to create database");
+    conn.execute(&*format!(r#"CREATE DATABASE "{}";"#, db_settings.database_name))
+        .await
+        .expect("Failed to create database");
 
     // Create database connection pool.
     let db_pool = PgPool::connect_with(db_settings.connection_with_db())
@@ -198,10 +188,7 @@ async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
         .expect("Failed to connect to database");
 
     // Migrate database.
-    sqlx::migrate!("./migrations")
-        .run(&db_pool)
-        .await
-        .expect("Failed to migrate the database");
+    sqlx::migrate!("./migrations").run(&db_pool).await.expect("Failed to migrate the database");
 
     db_pool
 }

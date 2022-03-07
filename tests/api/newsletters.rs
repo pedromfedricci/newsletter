@@ -76,19 +76,9 @@ async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks 
         .mount_as_scoped(&test_app.email_server)
         .await;
 
-    test_app
-        .post_subscriptions(test_body.into())
-        .await
-        .error_for_status()
-        .unwrap();
+    test_app.post_subscriptions(test_body.into()).await.error_for_status().unwrap();
 
-    let email_request = &test_app
-        .email_server
-        .received_requests()
-        .await
-        .unwrap()
-        .pop()
-        .unwrap();
+    let email_request = &test_app.email_server.received_requests().await.unwrap().pop().unwrap();
 
     test_app.get_confirmation_links(&email_request)
 }
@@ -96,11 +86,7 @@ async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks 
 async fn create_confirmed_subscriber(test_app: &TestApp) {
     let confirmation_links = create_unconfirmed_subscriber(test_app).await;
 
-    reqwest::get(confirmation_links.html)
-        .await
-        .unwrap()
-        .error_for_status()
-        .unwrap();
+    reqwest::get(confirmation_links.html).await.unwrap().error_for_status().unwrap();
 }
 
 #[tokio::test]
@@ -115,10 +101,7 @@ async fn request_missing_authorization_is_rejected() {
         .expect("Failed to execute request");
 
     assert_eq!(401, response.status().as_u16());
-    assert_eq!(
-        r#"Basic realm="publish""#,
-        response.headers()["WWW-Authenticate"]
-    );
+    assert_eq!(r#"Basic realm="publish""#, response.headers()["WWW-Authenticate"]);
 }
 
 #[tokio::test]
@@ -137,10 +120,7 @@ async fn non_existing_user_is_rejected() {
         .expect("Failed to execute request");
 
     assert_eq!(401, response.status().as_u16());
-    assert_eq!(
-        r#"Basic realm="publish""#,
-        response.headers()["WWW-Authenticate"]
-    );
+    assert_eq!(r#"Basic realm="publish""#, response.headers()["WWW-Authenticate"]);
 }
 
 #[tokio::test]
@@ -160,10 +140,7 @@ async fn invalid_password_is_rejected() {
         .expect("Failed to execute request");
 
     assert_eq!(401, response.status().as_u16());
-    assert_eq!(
-        r#"Basic realm="publish""#,
-        response.headers()["WWW-Authenticate"]
-    );
+    assert_eq!(r#"Basic realm="publish""#, response.headers()["WWW-Authenticate"]);
 }
 
 fn newsletter_test_body() -> Value {

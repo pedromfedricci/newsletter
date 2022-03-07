@@ -114,9 +114,8 @@ fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Erro
         .to_str()
         .context("The 'Authorization' header was not valid UTF8 string")?;
 
-    let enconded_segment = header_value
-        .strip_prefix("Basic ")
-        .context("The authorization scheme was not 'Basic'")?;
+    let enconded_segment =
+        header_value.strip_prefix("Basic ").context("The authorization scheme was not 'Basic'")?;
 
     let decoded_bytes = base64::decode_config(enconded_segment, base64::STANDARD)
         .context("Failed to decode 'Basic' credentials with base64")?;
@@ -239,9 +238,7 @@ impl ResponseError for PublishError {
             PublishError::AuthError(_) => {
                 let mut response = HttpResponse::new(StatusCode::UNAUTHORIZED);
                 let header_value = HeaderValue::from_str(r#"Basic realm="publish""#).unwrap();
-                response
-                    .headers_mut()
-                    .insert(header::WWW_AUTHENTICATE, header_value);
+                response.headers_mut().insert(header::WWW_AUTHENTICATE, header_value);
 
                 response
             }
