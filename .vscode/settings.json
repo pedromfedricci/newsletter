@@ -1,5 +1,6 @@
-{    
-    "rust-analyzer.runnableEnv": { 
-        "DATABASE_URL": "${env:DATABASE_URL}",
+{
+    "rust-analyzer.runnableEnv": {
+        // "DATABASE_URL": "${env:DATABASE_URL}",
+        "SQLX_OFFLINE": "true",
     },
 }
