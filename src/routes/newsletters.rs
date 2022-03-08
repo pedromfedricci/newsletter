@@ -86,15 +86,9 @@ pub(crate) async fn pubish_newsletter(
 async fn get_confirmed_subscribers(
     db_pool: &PgPool,
 ) -> Result<Vec<Result<ConfirmedSubscriber, anyhow::Error>>, sqlx::Error> {
-    let rows = sqlx::query!(
-        r#"
-        SELECT email
-        FROM subscriptions
-        WHERE status = 'confirmed'
-        "#,
-    )
-    .fetch_all(db_pool)
-    .await?;
+    let rows = sqlx::query!("SELECT email FROM subscriptions WHERE status = 'confirmed'",)
+        .fetch_all(db_pool)
+        .await?;
 
     let confirmed_subscribers = rows
         .into_iter()
@@ -181,18 +175,12 @@ async fn get_stored_credentials(
     username: &str,
     db_pool: &PgPool,
 ) -> Result<Option<(Uuid, String)>, anyhow::Error> {
-    let row = sqlx::query!(
-        r#"
-        SELECT user_id, password_hash
-        FROM users
-        WHERE username = $1
-        "#,
-        username,
-    )
-    .fetch_optional(db_pool)
-    .await
-    .context("Failed to perform a query to validate auth credentials")?
-    .map(|row| (row.user_id, row.password_hash));
+    let row =
+        sqlx::query!("SELECT user_id, password_hash FROM users WHERE username = $1", username,)
+            .fetch_optional(db_pool)
+            .await
+            .context("Failed to perform a query to validate auth credentials")?
+            .map(|row| (row.user_id, row.password_hash));
 
     Ok(row)
 }
