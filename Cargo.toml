@@ -22,10 +22,12 @@ anyhow = "1"
 base64 = "0.13"
 chrono = "0.4.15"
 config = "0.11.0"
+rand = { version = "0.8", features = ["std_rng"] }
 reqwest = { version = "0.11", default-features = false, features = [
     "json",
     "rustls-tls",
 ] }
+secrecy = { version = "0.8", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.19"
@@ -38,7 +40,6 @@ unicode-segmentation = "1.8.0"
 url = "2.2"
 uuid = { version = "0.8.1", features = ["v4"] }
 validator = "0.14.0"
-rand = { version = "0.8", features = ["std_rng"] }
 thiserror = "1"
 
 [dependencies.sqlx]

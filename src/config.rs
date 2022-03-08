@@ -2,6 +2,7 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 use config::{Config, ConfigError};
+use secrecy::{ExposeSecret, Secret};
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 
 use crate::domain::{SubscriberEmail, SubscriberEmailParseError};
@@ -33,7 +34,7 @@ impl ToSocketAddrs for ApplicationSettings {
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
-    pub authorization_token: String,
+    pub authorization_token: Secret<String>,
 }
 
 impl EmailClientSettings {
@@ -46,7 +47,7 @@ impl EmailClientSettings {
 pub struct DatabaseSettings {
     pub database_name: String,
     pub username: String,
-    pub password: String,
+    pub password: Secret<String>,
     pub host: String,
     pub port: u16,
     pub require_ssl: bool,
@@ -87,7 +88,7 @@ impl DatabaseSettings {
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
-            .password(&self.password)
+            .password(self.password.expose_secret())
             .port(self.port)
             .ssl_mode(ssl_mode)
     }

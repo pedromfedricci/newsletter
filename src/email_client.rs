@@ -1,4 +1,5 @@
 use reqwest::{Client, Url};
+use secrecy::{ExposeSecret, Secret};
 
 use crate::domain::SubscriberEmail;
 
@@ -7,7 +8,7 @@ pub struct EmailClient {
     http_client: Client,
     base_url: Url,
     sender: SubscriberEmail,
-    authorization_token: String,
+    authorization_token: Secret<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -44,7 +45,7 @@ impl EmailClient {
 
         self.http_client
             .post(url)
-            .header("X-Postmark-Server-Token", &self.authorization_token)
+            .header("X-Postmark-Server-Token", self.authorization_token.expose_secret())
             .json(&request_body)
             .send()
             .await?
@@ -53,7 +54,11 @@ impl EmailClient {
         Ok(())
     }
 
-    pub fn new(base_url: Url, sender: SubscriberEmail, authorization_token: String) -> Self {
+    pub fn new(
+        base_url: Url,
+        sender: SubscriberEmail,
+        authorization_token: Secret<String>,
+    ) -> Self {
         let http_client =
             Client::builder().timeout(std::time::Duration::from_secs(10)).build().unwrap();
 
@@ -70,6 +75,7 @@ mod test {
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
     use reqwest::Url;
+    use secrecy::Secret;
     use wiremock::matchers::{any, header, header_exists, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -111,7 +117,7 @@ mod test {
 
     /// Get a test instance of `EmailClient`.
     fn email_client(base_url: &String) -> EmailClient {
-        EmailClient::new(url(base_url), email(), Faker.fake())
+        EmailClient::new(url(base_url), email(), Secret::new(Faker.fake()))
     }
 
     #[tokio::test]
