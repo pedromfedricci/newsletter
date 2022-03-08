@@ -10,15 +10,15 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SQLX_VERSION: 0.5.11
+  SQLX_FEATURES: postgres,native-tls
+  APP_ENVIRONMENT: ci
+  DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
 
 jobs:
   tools:
     name: Install tools
     runs-on: ubuntu-latest
-
-    env:
-      SQLX_VERSION: 0.5.11
-      SQLX_FEATURES: postgres,native-tls
 
     steps:
       - name: Install stable toolchain
@@ -63,12 +63,6 @@ jobs:
         ports:
           - "5432:5432"
 
-    env:
-      APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
-      SQLX_VERSION: 0.5.5
-      SQLX_FEATURES: postgres
-
     steps:
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -96,14 +90,8 @@ jobs:
           sqlx database create
           sqlx migrate run
 
-      - name: Cache cargo
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check build cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Run tests
         uses: actions-rs/cargo@v1
@@ -146,12 +134,6 @@ jobs:
         ports:
           - "5432:5432"
 
-    env:
-      APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
-      SQLX_VERSION: 0.5.5
-      SQLX_FEATURES: postgres
-
     steps:
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -180,14 +162,8 @@ jobs:
           sqlx database create
           sqlx migrate run
 
-      - name: Cache cargo
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check build cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
@@ -209,12 +185,6 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - "5432:5432"
-
-    env:
-      APP_ENVIRONMENT: ci
-      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
-      SQLX_VERSION: 0.5.5
-      SQLX_FEATURES: postgres
 
     steps:
       - name: Install stable toolchain
