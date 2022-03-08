@@ -3,6 +3,8 @@ name = "newsletter"
 version = "0.3.1"
 edition = "2021"
 rust-version = "1.59"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
 
 [lib]
 path = "src/lib.rs"
