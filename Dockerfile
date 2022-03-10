@@ -1,9 +1,10 @@
-ARG RUST_VERSION=1.53.0
+ARG RUST_VERSION=1.59.0
 ARG CARGO_CHEF_VERSION=latest
 ARG CARGO_CHEF_IMAGE=lukemathwalker/cargo-chef:${CARGO_CHEF_VERSION}-rust-${RUST_VERSION}
 
 FROM ${CARGO_CHEF_IMAGE} as chef
 WORKDIR /app
+RUN apt-get update && apt-get install lld clang -y
 
 FROM chef as planner
 COPY . .

@@ -6,15 +6,19 @@ USER root
 ARG POSTGRES_CLIENT_VERSION=13
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client-${POSTGRES_CLIENT_VERSION} \
+    lld \
+    clang \
     && \
     apt-get remove -y --auto-remove && rm -rf /var/lib/apt/lists/*
 
 USER rust
 ARG SQLX_CLI_VERSION=0.5.11
-ARG SQLX_CLI_FEATURES=postgres
+ARG SQLX_CLI_FEATURES=postgres,native-tls
 RUN cargo install sqlx-cli \
     --version=${SQLX_CLI_VERSION} \
     --features=${SQLX_CLI_FEATURES} \
     --no-default-features \
     --locked \
-    --force
+    --force \
+    && \
+    cargo install cargo-watch bunyan
