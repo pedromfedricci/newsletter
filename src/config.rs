@@ -3,9 +3,11 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 use config::{Config, ConfigError};
 use secrecy::{ExposeSecret, Secret};
+use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 
 use crate::domain::{SubscriberEmail, SubscriberEmailParseError};
+use crate::email_client::EmailClient;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Settings {
@@ -32,14 +34,43 @@ impl ToSocketAddrs for ApplicationSettings {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct EmailClientSettings {
-    pub base_url: String,
-    pub sender_email: String,
-    pub authorization_token: Secret<String>,
+    base_url: String,
+    sender_email: String,
+    authorization_token: Secret<String>,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    timeout_milliseconds: u64,
 }
 
 impl EmailClientSettings {
     pub fn sender(&self) -> Result<SubscriberEmail, SubscriberEmailParseError> {
         SubscriberEmail::parse(self.sender_email.clone())
+    }
+
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_milliseconds)
+    }
+
+    pub fn authorization_token(self) -> Secret<String> {
+        self.authorization_token
+    }
+
+    pub fn base_url(&self) -> Result<url::Url, url::ParseError> {
+        url::Url::parse(&self.base_url)
+    }
+
+    pub fn set_base_url(&mut self, uri: String) {
+        self.base_url = uri
+    }
+}
+
+impl From<EmailClientSettings> for EmailClient {
+    fn from(settings: EmailClientSettings) -> EmailClient {
+        let sender = settings.sender().expect("valid sender email address from configutation file");
+        let base_url = settings.base_url().expect("valid base_url from configuration file");
+        let timeout = settings.timeout();
+        let authorization_token = settings.authorization_token();
+
+        EmailClient::new(base_url, sender, authorization_token, timeout)
     }
 }
 

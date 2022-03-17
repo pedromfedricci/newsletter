@@ -147,7 +147,7 @@ pub(crate) async fn spawn_app() -> TestApp {
         // Use a random OS port
         config.application.port = 0;
         // Use the mock server as email API
-        config.email_client.base_url = email_server.uri();
+        config.email_client.set_base_url(email_server.uri());
         config
     };
 

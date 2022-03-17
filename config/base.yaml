@@ -10,5 +10,6 @@ database:
   database_name: newsletter
   require_ssl: false
 email_client:
-  base_url: http://localhost
-  authorization_token: token
+  base_url: localhost
+  authorization_token: aAkd230Snzs8SlOamHH1
+  timeout_milliseconds: 10000
