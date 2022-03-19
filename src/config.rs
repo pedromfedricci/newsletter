@@ -14,13 +14,16 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
     pub email_client: EmailClientSettings,
+    pub redis_uri: Secret<String>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct ApplicationSettings {
     pub ip: IpAddr,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub base_url: String,
+    pub hmac_secret: Secret<String>,
 }
 
 impl ToSocketAddrs for ApplicationSettings {
@@ -65,8 +68,10 @@ impl EmailClientSettings {
 
 impl From<EmailClientSettings> for EmailClient {
     fn from(settings: EmailClientSettings) -> EmailClient {
-        let sender = settings.sender().expect("valid sender email address from configutation file");
-        let base_url = settings.base_url().expect("valid base_url from configuration file");
+        let sender =
+            settings.sender().expect("expected valid sender email address from configutation file");
+        let base_url =
+            settings.base_url().expect("expected valid base_url from configuration file");
         let timeout = settings.timeout();
         let authorization_token = settings.authorization_token();
 
@@ -80,33 +85,9 @@ pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,
     pub host: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub require_ssl: bool,
-}
-
-pub fn settings() -> Result<Settings, ConfigError> {
-    let mut settings = Config::default();
-    let base_path = std::env::current_dir().expect("Could not determine the current directory");
-    let config_dir = base_path.join("config");
-
-    // Read the default configuration file
-    settings.merge(config::File::from(config_dir.join("base")).required(true))?;
-
-    // Detect the running environment.
-    // Default to `local` if unspecified.
-    let env: Environment = std::env::var("APP_ENVIRONMENT")
-        .unwrap_or_else(|_| "local".into())
-        .try_into()
-        .expect("Could not parse APP_ENVIRONMENT environment variable");
-
-    // Layer on the environment-specific values.
-    settings.merge(config::File::from(config_dir.join(env.as_str())).required(true))?;
-
-    // Add in settings from environment variables (with a prefix of APP and '__' as separator)
-    // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
-    settings.merge(config::Environment::with_prefix("app").separator("__"))?;
-
-    settings.try_into()
 }
 
 impl DatabaseSettings {
@@ -129,37 +110,94 @@ impl DatabaseSettings {
     }
 }
 
-pub(crate) enum Environment {
+pub fn settings() -> Result<Settings, ConfigError> {
+    let mut settings = Config::default();
+    let base_path = std::env::current_dir().expect("Could not determine the current directory");
+    let config_dir = base_path.join("config");
+
+    // Read the default configuration file
+    settings.merge(config::File::from(config_dir.join("base")).required(true))?;
+
+    // Detect the running environment.
+    // Default to `local` if unspecified.
+    let env = if let Ok(env_str) = std::env::var(Environment::ENV_VAR_NAME) {
+        env_str.as_str().try_into().unwrap()
+    } else {
+        Environment::Local
+    };
+
+    // Layer on the environment-specific values.
+    settings.merge(config::File::from(config_dir.join(env.as_ref())).required(true))?;
+
+    // Add in settings from environment variables (with a prefix of APP and '__' as separator)
+    // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
+    settings.merge(config::Environment::with_prefix("app").separator("__"))?;
+
+    settings.try_into()
+}
+
+#[derive(Debug)]
+enum Environment {
     Local,
-    CI,
+    Ci,
     DevContainer,
     Production,
 }
 
 impl Environment {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Environment::Local => "local",
-            Environment::DevContainer => "devcontainer",
-            Environment::CI => "ci",
-            Environment::Production => "production",
-        }
-    }
+    const ENV_VAR_NAME: &'static str = "APP_ENVIRONMENT";
+
+    const LOCAL: &'static str = "local";
+    const DEVCONTAINER: &'static str = "devcontainer";
+    const CI: &'static str = "ci";
+    const PRODUCTION: &'static str = "production";
 }
 
-impl TryFrom<String> for Environment {
-    type Error = String;
+impl TryFrom<&str> for Environment {
+    type Error = EnvironmentParseError;
 
-    fn try_from(s: String) -> Result<Self, Self::Error> {
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s.to_lowercase().as_str() {
-            "local" => Ok(Self::Local),
-            "devcontainer" => Ok(Self::DevContainer),
-            "ci" => Ok(Self::CI),
-            "production" => Ok(Self::Production),
-            other => Err(format!(
-                "{} is not a supported environment. Use either `local`, `ci`, `devcontainer` or `production`.",
-                other
-            )),
+            Self::LOCAL => Ok(Self::Local),
+            Self::DEVCONTAINER => Ok(Self::DevContainer),
+            Self::CI => Ok(Self::Ci),
+            Self::PRODUCTION => Ok(Self::Production),
+            other => Err(EnvironmentParseError { other: other.to_string() }),
         }
     }
 }
+
+impl AsRef<str> for Environment {
+    fn as_ref(&self) -> &str {
+        match self {
+            Environment::Local => Self::LOCAL,
+            Environment::DevContainer => Self::DEVCONTAINER,
+            Environment::Ci => Self::CI,
+            Environment::Production => Self::PRODUCTION,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct EnvironmentParseError {
+    other: String,
+}
+
+impl std::fmt::Display for EnvironmentParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "could not parse {env_var_name} environment variable, \
+            `{other}` is not supported environment, \
+            use either `{local}`, `{dev}`, `{ci}` or `{prod}`",
+            env_var_name = Environment::ENV_VAR_NAME,
+            other = self.other,
+            local = Environment::LOCAL,
+            dev = Environment::DEVCONTAINER,
+            ci = Environment::CI,
+            prod = Environment::PRODUCTION
+        )
+    }
+}
+
+impl std::error::Error for EnvironmentParseError {}

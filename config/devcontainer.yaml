@@ -2,3 +2,4 @@ database:
   host: database
 email_client:
   sender_email: newsletter@devcontainer.com
+redis_uri: redis://session_store:6379

@@ -2,6 +2,7 @@ application:
   ip: 0.0.0.0
   port: 8000
   base_url: http://localhost
+  hmac_secret: JgAdLJ6Y4G93P6xlBREM38XQ9LLQF946EBANR76FxMQKg877i8MKPe1Zm51Q2iPp
 database:
   host: localhost
   port: 5432
@@ -10,6 +11,7 @@ database:
   database_name: newsletter
   require_ssl: false
 email_client:
-  base_url: localhost
-  authorization_token: aAkd230Snzs8SlOamHH1
+  base_url: http://localhost
+  authorization_token: 0L9unL8YYFupf7BL
   timeout_milliseconds: 10000
+redis_uri: redis://localhost:6379

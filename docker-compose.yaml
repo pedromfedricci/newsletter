@@ -13,7 +13,21 @@ services:
     networks:
       db:
         aliases:
-          - "{DATABASE_NET_ALIAS}"
+          - "${DATABASE_NET_ALIAS}"
+
+  session_store:
+    image: "${SESSION_STORE_IMAGE}"
+    hostname: "${SESSION_STORE_HOSTNAME}"
+    ports:
+      - "${HOST_SESSION_STORE_PORT}:${SESSION_STORE_PORT}"
+    env_file:
+      - ./.env
+    volumes:
+      - session_store:/data
+    networks:
+      session_store:
+        aliases:
+          - "${SESSION_STORE_NET_ALIAS}"
 
   backend:
     image: "${DEV_BACKEND_IMAGE}"
@@ -28,11 +42,17 @@ services:
       db:
         aliases:
           - "${APP_NET_ALIAS}"
+      session_store:
+        aliases:
+          - "${APP_NET_ALIAS}"
     depends_on:
       - database
+      - session_store
 
 volumes:
   db:
+  session_store:
 
 networks:
   db:
+  session_store:

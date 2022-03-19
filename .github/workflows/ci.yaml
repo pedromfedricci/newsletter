@@ -63,6 +63,11 @@ jobs:
         ports:
           - "5432:5432"
 
+      redis:
+        image: redis:6
+        ports:
+          - "6379:6379"
+
     steps:
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -185,6 +190,11 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - "5432:5432"
+
+      redis:
+        image: redis:6
+        ports:
+          - "6379:6379"
 
     steps:
       - name: Install stable toolchain
