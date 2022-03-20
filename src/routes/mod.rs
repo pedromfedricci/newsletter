@@ -1,10 +1,17 @@
+mod admin;
 mod health_check;
-mod newsletters;
+mod home;
+mod login;
 mod subscriptions;
 mod subscriptions_confirm;
 
+pub(crate) use admin::{
+    admin_dashboard, change_password, change_password_form, logout, publish_newsletter,
+    publish_newsletter_form,
+};
 pub(crate) use health_check::health_check;
-pub(crate) use newsletters::pubish_newsletter;
+pub(crate) use home::home;
+pub(crate) use login::{login, login_form};
 pub(crate) use subscriptions::subscribe;
 pub(crate) use subscriptions_confirm::confirm;
 

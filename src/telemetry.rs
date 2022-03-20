@@ -29,5 +29,5 @@ where
     R: Send + 'static,
 {
     let current_span = tracing::Span::current();
-    actix_web::rt::task::spawn_blocking(move || current_span.in_scope(f))
+    tokio::task::spawn_blocking(move || current_span.in_scope(f))
 }

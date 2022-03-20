@@ -1,7 +1,7 @@
 use libnewsletter::{config, startup::Application, telemetry};
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let subscriber = telemetry::get_subscriber("newsletter".into(), "info".into(), std::io::stdout);
     telemetry::init_subscriber(subscriber);
 

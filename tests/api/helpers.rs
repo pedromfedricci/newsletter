@@ -29,6 +29,168 @@ pub(crate) struct ConfirmationLinks {
     pub(crate) plain_text: reqwest::Url,
 }
 
+pub(crate) struct TestApp {
+    pub(crate) addr: SocketAddr,
+    pub(crate) db_pool: PgPool,
+    pub(crate) email_server: MockServer,
+    pub(crate) user: TestUser,
+    pub(crate) client: reqwest::Client,
+}
+
+impl TestApp {
+    /// Extract the confirmation links embedded in the request to the email API.
+    pub(crate) fn get_confirmation_links(
+        &self,
+        email_request: &wiremock::Request,
+    ) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+
+        // Extract the link from one of the request fields.
+        let get_link = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            let raw_link = links[0].as_str().to_owned();
+            let mut confirmation_link = reqwest::Url::parse(&raw_link).unwrap();
+            // Let's make sure we don't call random APIs on the web
+            assert_eq!(confirmation_link.host_str().unwrap(), "localhost");
+            confirmation_link.set_port(Some(self.port())).unwrap();
+            confirmation_link
+        };
+
+        let html = get_link(&body["HtmlBody"].as_str().unwrap());
+        let plain_text = get_link(&body["TextBody"].as_str().unwrap());
+        ConfirmationLinks { html, plain_text }
+    }
+
+    pub(crate) async fn post_subscriptions(&self, body: String) -> reqwest::Response {
+        self.client
+            .post(self.with_path("/subscriptions"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute the request")
+    }
+
+    pub(crate) async fn get_publish_newsletter(&self) -> reqwest::Response {
+        self.client
+            .get(self.with_path("/admin/newsletters"))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub(crate) async fn get_publish_newsletter_html(&self) -> String {
+        self.get_publish_newsletter().await.text().await.unwrap()
+    }
+
+    pub async fn post_publish_newsletter<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.client
+            .post(self.with_path("/admin/newsletters"))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub(crate) async fn get_login(&self) -> reqwest::Response {
+        self.client
+            .get(self.with_path("/login"))
+            .send()
+            .await
+            .expect("failed to send GET request to /login")
+    }
+
+    pub(crate) async fn get_login_html(&self) -> String {
+        self.get_login().await.text().await.unwrap()
+    }
+
+    pub(crate) async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.client
+            .post(self.with_path("/login"))
+            .form(body)
+            .send()
+            .await
+            .expect("failed to send POST request to /login")
+    }
+
+    pub async fn post_logout(&self) -> reqwest::Response {
+        self.client
+            .post(self.with_path("/admin/logout"))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub(crate) async fn get_admin_dashboard(&self) -> reqwest::Response {
+        self.client
+            .get(self.with_path("/admin/dashboard"))
+            .send()
+            .await
+            .expect("failed to send GET request to /admin/dashboard")
+    }
+
+    pub(crate) async fn get_admin_dashboard_html(&self) -> String {
+        self.get_admin_dashboard().await.text().await.unwrap()
+    }
+
+    pub(crate) async fn get_change_password(&self) -> reqwest::Response {
+        self.client
+            .get(self.with_path("/admin/password"))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub(crate) async fn post_change_password<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.client
+            .post(self.with_path("/admin/password"))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub(crate) async fn get_change_password_html(&self) -> String {
+        self.get_change_password().await.text().await.unwrap()
+    }
+
+    pub(crate) fn port(&self) -> u16 {
+        self.addr.port()
+    }
+
+    pub(crate) fn base_url(&self) -> String {
+        let (host, port) = (self.addr.ip(), self.addr.port());
+        format!("http://{host}:{port}")
+    }
+
+    // Helper function to create URL from address and path.
+    pub(crate) fn with_path(&self, path: &str) -> Url {
+        let base_url = self.base_url();
+        Url::parse(&format!("{base_url}{path}")).expect("Failed to parse URL from address and path")
+    }
+
+    pub(crate) async fn login_test_user(&self) -> reqwest::Response {
+        let username = &self.user.username;
+        let password = &self.user.password;
+        let login_form = [("username", username), ("password", password)];
+
+        self.post_login(&login_form).await
+    }
+}
+
 pub(crate) struct TestUser {
     pub(crate) user_id: Uuid,
     pub(crate) username: String,
@@ -67,69 +229,10 @@ impl TestUser {
         .await
         .expect("Failed to store test user.");
     }
-}
 
-pub(crate) struct TestApp {
-    pub(crate) addr: SocketAddr,
-    pub(crate) db_pool: PgPool,
-    pub(crate) email_server: MockServer,
-    pub(crate) user: TestUser,
-}
-
-impl TestApp {
-    pub(crate) async fn post_subscriptions(&self, body: String) -> reqwest::Response {
-        reqwest::Client::new()
-            .post(url_from(&self.addr, "/subscriptions"))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body)
-            .send()
-            .await
-            .expect("Failed to execute the request")
+    pub(crate) async fn _login(&self, test_app: &TestApp) {
+        test_app.post_login(&[("username", &self.username), ("password", &self.password)]).await;
     }
-
-    /// Extract the confirmation links embedded in the request to the email API.
-    pub fn get_confirmation_links(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
-        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
-
-        // Extract the link from one of the request fields.
-        let get_link = |s: &str| {
-            let links: Vec<_> = linkify::LinkFinder::new()
-                .links(s)
-                .filter(|l| *l.kind() == linkify::LinkKind::Url)
-                .collect();
-            assert_eq!(links.len(), 1);
-            let raw_link = links[0].as_str().to_owned();
-            let mut confirmation_link = reqwest::Url::parse(&raw_link).unwrap();
-            // Let's make sure we don't call random APIs on the web
-            assert_eq!(confirmation_link.host_str().unwrap(), "localhost");
-            confirmation_link.set_port(Some(self.port())).unwrap();
-            confirmation_link
-        };
-
-        let html = get_link(&body["HtmlBody"].as_str().unwrap());
-        let plain_text = get_link(&body["TextBody"].as_str().unwrap());
-        ConfirmationLinks { html, plain_text }
-    }
-
-    pub async fn post_newsletters(&self, body: &serde_json::Value) -> reqwest::Response {
-        reqwest::Client::new()
-            .post(url_from(&self.addr, "/newsletters"))
-            .basic_auth(&self.user.username, Some(&self.user.password))
-            .json(body)
-            .send()
-            .await
-            .expect("Failed to execute request.")
-    }
-
-    pub(crate) fn port(&self) -> u16 {
-        self.addr.port()
-    }
-}
-
-// Helper function to create URL from address and path.
-pub(crate) fn url_from(addr: &SocketAddr, path: &str) -> Url {
-    Url::parse(&format!("http://{}{}", addr.to_string(), path))
-        .expect("Failed to parse URL from address and path")
 }
 
 // Runs the server to test the public APIs.
@@ -164,11 +267,16 @@ pub(crate) async fn spawn_app() -> TestApp {
         user.store(&db_pool).await;
         user
     };
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .cookie_store(true)
+        .build()
+        .expect("could not build the test client");
 
     // Spawn application intance
     tokio::spawn(application.run_until_stopped());
 
-    TestApp { addr, db_pool, email_server, user }
+    TestApp { addr, db_pool, email_server, user, client }
 }
 
 async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
@@ -191,4 +299,9 @@ async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
     sqlx::migrate!("./migrations").run(&db_pool).await.expect("Failed to migrate the database");
 
     db_pool
+}
+
+pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
+    assert_eq!(response.status().as_u16(), 303);
+    assert_eq!(response.headers().get("Location").unwrap(), location);
 }

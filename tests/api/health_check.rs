@@ -1,4 +1,4 @@
-use crate::helpers::{spawn_app, url_from};
+use crate::helpers::spawn_app;
 
 // Test the health_check endpoint for requirements:
 // * the health check is exposed at /health_check;
@@ -8,8 +8,9 @@ use crate::helpers::{spawn_app, url_from};
 async fn test_health_check() {
     let test_app = spawn_app().await;
 
-    let response = reqwest::Client::new()
-        .get(url_from(&test_app.addr, "/health_check"))
+    let response = test_app
+        .client
+        .get(test_app.with_path("/health_check"))
         .send()
         .await
         .expect("Failed to execute request");
