@@ -1,9 +1,13 @@
-use crate::helpers::{assert_is_redirect_to, spawn_app, ConfirmationLinks, TestApp};
+use fake::faker::internet::en::SafeEmail;
+use fake::faker::name::en::Name;
+use fake::Fake;
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
 
+use crate::helpers::{assert_is_redirect_to, spawn_app, ConfirmationLinks, TestApp};
+
 async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks {
-    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let name: String = Name().fake();
 
     let _mock_guard = Mock::given(path("/email"))
         .and(method("POST"))
@@ -12,7 +16,10 @@ async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks 
         .expect(1)
         .mount_as_scoped(&test_app.email_server)
         .await;
-    test_app.post_subscriptions(body.into()).await.error_for_status().unwrap();
+
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    test_app.post_subscriptions(&body).await.error_for_status().unwrap();
 
     let email_request = &test_app.email_server.received_requests().await.unwrap().pop().unwrap();
     test_app.get_confirmation_links(email_request)

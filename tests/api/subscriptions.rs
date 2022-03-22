@@ -1,7 +1,8 @@
-use wiremock::{
-    matchers::{method, path},
-    Mock, ResponseTemplate,
-};
+use fake::faker::internet::en::SafeEmail;
+use fake::faker::name::en::Name;
+use fake::Fake;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, ResponseTemplate};
 
 use crate::helpers::spawn_app;
 
@@ -9,20 +10,19 @@ use crate::helpers::spawn_app;
 async fn subscribe_returns_a_400_when_data_is_missing() {
     let test_app = spawn_app().await;
 
-    let test_cases = vec![
-        ("name=le%20guin", "Missing the email."),
-        ("email=ursula_le_guin%40gmail.com", "Missing the name."),
-        ("", "Missing both name and email."),
-    ];
+    let name = || Name().fake::<String>();
+    let email = || SafeEmail().fake::<String>();
+    let test_cases = [[("name", name())], [("email", email())]];
+    let errors = ["missing the email", "mising the name"];
 
-    for (invalid_body, error_message) in test_cases {
-        let response = test_app.post_subscriptions(invalid_body.into()).await;
+    for (invalid_body, error) in test_cases.into_iter().zip(errors) {
+        let response = test_app.post_subscriptions(&invalid_body).await;
 
         assert_eq!(
             400,
             response.status().as_u16(),
             "The API did not fail with 400 Bad Request when the payload was {}.",
-            error_message
+            error
         );
     }
 }
@@ -31,20 +31,23 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
 async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     let test_app = spawn_app().await;
 
-    let test_cases = vec![
-        ("name=&email=ursula_le_guin%40gmail.com", "empty name"),
-        ("name=Ursula&email=", "empty email"),
-        ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+    let name = || Name().fake();
+    let email = || SafeEmail().fake();
+    let test_cases = [
+        [("name", String::new()), ("email", email())],
+        [("name", name()), ("email", String::new())],
+        [("name", name()), ("email", "definitely-not-an-email".to_string())],
     ];
+    let errors = ["empty name", "empty email", "invalid email"];
 
-    for (invalid_body, description) in test_cases {
-        let response = test_app.post_subscriptions(invalid_body.into()).await;
+    for (invalid_body, error) in test_cases.into_iter().zip(errors) {
+        let response = test_app.post_subscriptions(&invalid_body).await;
 
         assert_eq!(
             400,
             response.status().as_u16(),
             "The API did not return a 400 Bad Request when the payload was {}.",
-            description
+            error
         );
     }
 }
@@ -59,8 +62,10 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .mount(&test_app.email_server)
         .await;
 
-    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    let response = test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    let response = test_app.post_subscriptions(&body).await;
 
     assert_eq!(200, response.status().as_u16());
 }
@@ -76,8 +81,11 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
         .mount(&test_app.email_server)
         .await;
 
-    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    test_app.post_subscriptions(&body).await;
+
     // Assert on MockServer drop
 }
 
@@ -91,8 +99,10 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
         .mount(&test_app.email_server)
         .await;
 
-    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    test_app.post_subscriptions(&body).await;
 
     let email_request = &test_app.email_server.received_requests().await.unwrap()[0];
     let confirmation_links = test_app.get_confirmation_links(&email_request);
@@ -104,21 +114,19 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
 async fn subscribe_persists_the_new_subscriber() {
     let test_app = spawn_app().await;
 
-    let test_status = "pending_confirmation";
-    let test_name = "le guin";
-    let test_email = "ursula_le_guin@gmail.com";
-    let test_body =
-        format!("name={}&email={}", test_name.replace(" ", "%20"), test_email.replace("@", "%40"));
-    test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name.clone()), ("email", email.clone())];
+    test_app.post_subscriptions(&body).await;
 
     let saved = sqlx::query!("SELECT email, name, status FROM subscriptions")
         .fetch_one(&test_app.db_pool)
         .await
         .expect("Failed to fetch saved subscription.");
 
-    assert_eq!(saved.email, test_email);
-    assert_eq!(saved.name, test_name);
-    assert_eq!(saved.status, test_status);
+    assert_eq!(saved.email, email);
+    assert_eq!(saved.name, name);
+    assert_eq!(saved.status, "pending_confirmation");
 }
 
 #[tokio::test]
@@ -130,8 +138,10 @@ async fn subscribe_fails_if_there_is_a_fatal_database_error() {
         .await
         .unwrap();
 
-    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    let response = test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    let response = test_app.post_subscriptions(&body).await;
 
     assert_eq!(response.status().as_u16(), 500);
 }

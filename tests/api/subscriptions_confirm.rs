@@ -1,3 +1,6 @@
+use fake::faker::internet::en::SafeEmail;
+use fake::faker::name::en::Name;
+use fake::Fake;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, ResponseTemplate};
 
@@ -13,8 +16,10 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
         .mount(&test_app.email_server)
         .await;
 
-    let test_body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    test_app.post_subscriptions(test_body.into()).await;
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = [("name", name), ("email", email)];
+    test_app.post_subscriptions(&body).await;
 
     let email_request = &test_app.email_server.received_requests().await.unwrap()[0];
     let confirmation_links = test_app.get_confirmation_links(&email_request);

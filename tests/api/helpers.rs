@@ -65,11 +65,14 @@ impl TestApp {
         ConfirmationLinks { html, plain_text }
     }
 
-    pub(crate) async fn post_subscriptions(&self, body: String) -> reqwest::Response {
+    pub(crate) async fn post_subscriptions<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.client
             .post(self.with_path("/subscriptions"))
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body)
+            .form(body)
             .send()
             .await
             .expect("Failed to execute the request")
@@ -301,7 +304,7 @@ async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {
     db_pool
 }
 
-pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
+pub(crate) fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
     assert_eq!(response.status().as_u16(), 303);
     assert_eq!(response.headers().get("Location").unwrap(), location);
 }
