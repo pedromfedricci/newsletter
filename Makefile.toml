@@ -1,6 +1,10 @@
 [env]
 CARGO_TERM_COLOR = "always"
 
+[tasks.sqlx-data]
+description = "Generate sqlx-data.json for lib and test"
+command = "./scripts/generate_sqlx_data.sh"
+
 [tasks.fmt]
 description = "Runs cargo fmt"
 command = "cargo"
@@ -35,9 +39,7 @@ args = ["clippy", "--", "--deny", "warnings"]
 [tasks.ci-coverage]
 description = "Runs coverage tool"
 category = "Test"
-run_task = [
-    { name = "tarpaulin", condition = { platforms = ["linux"] } }
-]
+run_task = [{ name = "tarpaulin", condition = { platforms = ["linux"] } }]
 
 [tasks.ci-fast]
 description = "Runs ci tasks locally"
@@ -45,7 +47,5 @@ run_task = { name = ["ci-fmt", "ci-test", "ci-clippy"] }
 
 [tasks.ci-full]
 description = "Runs all ci tasks locally"
-dependencies = [
-    "ci-fast",
-]
+dependencies = ["ci-fast"]
 run_task = { name = "ci-coverage" }

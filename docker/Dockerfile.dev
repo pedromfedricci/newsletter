@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client-${POSTGRES_CLIENT_VERSION} \
     lld \
     clang \
+    jq \
     && \
     apt-get remove -y --auto-remove && rm -rf /var/lib/apt/lists/*
 
