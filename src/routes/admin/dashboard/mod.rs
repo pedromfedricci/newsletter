@@ -18,7 +18,7 @@ pub(crate) async fn admin_dashboard(
         return Ok(HttpResponse::SeeOther().insert_header((LOCATION, "/login")).finish());
     };
 
-    let html = format!(include_str!("dashboard.html"), username);
+    let html = format!(include_str!("dashboard.html"), username = username);
     Ok(HttpResponse::Ok().content_type(ContentType::html()).body(html))
 }
 

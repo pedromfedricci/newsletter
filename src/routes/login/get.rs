@@ -10,6 +10,6 @@ pub(crate) async fn login_form(flash_messages: IncomingFlashMessages) -> HttpRes
         writeln!(messages, "<p><i>{}</i></p>", msg.content()).unwrap();
     }
 
-    let html = format!(include_str!("login.html"), messages);
+    let html = format!(include_str!("login.html"), messages = messages);
     HttpResponse::Ok().content_type(ContentType::html()).body(html)
 }

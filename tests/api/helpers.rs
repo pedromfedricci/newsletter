@@ -1,4 +1,5 @@
 use argon2::{password_hash::SaltString, Algorithm, Argon2, Params, PasswordHasher, Version};
+use libnewsletter::email_client::EmailClient;
 use once_cell::sync::Lazy;
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -7,6 +8,7 @@ use uuid::Uuid;
 use wiremock::MockServer;
 
 use libnewsletter::config::{self, DatabaseSettings};
+use libnewsletter::issue_delivery_worker::{try_execute_task, ExecutionOutcome};
 use libnewsletter::startup::{get_connection_pool, Application};
 use libnewsletter::telemetry;
 
@@ -35,6 +37,7 @@ pub(crate) struct TestApp {
     pub(crate) email_server: MockServer,
     pub(crate) user: TestUser,
     pub(crate) client: reqwest::Client,
+    pub(crate) email_client: EmailClient,
 }
 
 impl TestApp {
@@ -192,6 +195,16 @@ impl TestApp {
 
         self.post_login(&login_form).await
     }
+
+    pub(crate) async fn dispatch_all_pending_emails(&self) {
+        loop {
+            if let ExecutionOutcome::EmptyQueue =
+                try_execute_task(&self.db_pool, &self.email_client).await.unwrap()
+            {
+                break;
+            }
+        }
+    }
 }
 
 pub(crate) struct TestUser {
@@ -260,8 +273,7 @@ pub(crate) async fn spawn_app() -> TestApp {
     // Create and migrate the database
     configure_database(&config.database).await;
 
-    let db_pool =
-        get_connection_pool(&config.database).await.expect("Failed to connect to the database");
+    let db_pool = get_connection_pool(&config.database);
     let application =
         Application::build(config.clone()).await.expect("Failed to build application");
     let addr = SocketAddr::from(([127, 0, 0, 1], application.port()));
@@ -275,11 +287,12 @@ pub(crate) async fn spawn_app() -> TestApp {
         .cookie_store(true)
         .build()
         .expect("could not build the test client");
+    let email_client = config.email_client.client();
 
     // Spawn application intance
     tokio::spawn(application.run_until_stopped());
 
-    TestApp { addr, db_pool, email_server, user, client }
+    TestApp { addr, db_pool, email_server, user, client, email_client }
 }
 
 async fn configure_database(db_settings: &DatabaseSettings) -> PgPool {

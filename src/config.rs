@@ -53,8 +53,8 @@ impl EmailClientSettings {
         std::time::Duration::from_millis(self.timeout_milliseconds)
     }
 
-    pub fn authorization_token(self) -> Secret<String> {
-        self.authorization_token
+    pub fn authorization_token(&self) -> Secret<String> {
+        self.authorization_token.clone()
     }
 
     pub fn base_url(&self) -> Result<url::Url, url::ParseError> {
@@ -63,6 +63,12 @@ impl EmailClientSettings {
 
     pub fn set_base_url(&mut self, uri: String) {
         self.base_url = uri
+    }
+
+    pub fn client(self) -> EmailClient {
+        let sender_email = self.sender().expect("invalid sender email address");
+        let base_url = self.base_url().expect("invalid base_url");
+        EmailClient::new(base_url, sender_email, self.authorization_token(), self.timeout())
     }
 }
 

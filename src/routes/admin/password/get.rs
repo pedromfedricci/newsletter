@@ -20,6 +20,6 @@ pub(crate) async fn change_password_form(
         writeln!(messages, "<p><i>{}</i></p>", msg.content()).unwrap();
     }
 
-    let html = format!(include_str!("password.html"), messages);
+    let html = format!(include_str!("password.html"), messages = messages);
     Ok(HttpResponse::Ok().content_type(ContentType::html()).body(html))
 }

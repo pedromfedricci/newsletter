@@ -11,7 +11,12 @@ pub(crate) async fn publish_newsletter_form(
     for msg in flash_messages.iter() {
         writeln!(messages, "<p><i>{}</i></p>", msg.content()).unwrap();
     }
+    let idempotency_key = uuid::Uuid::new_v4();
 
-    let html = format!(include_str!("newsletter.html"), messages);
+    let html = format!(
+        include_str!("newsletter.html"),
+        messages = messages,
+        idempotency_key = idempotency_key
+    );
     Ok(HttpResponse::Ok().content_type(ContentType::html()).body(html))
 }

@@ -26,8 +26,7 @@ pub struct Application {
 
 impl Application {
     pub async fn build(config: Settings) -> Result<Self, anyhow::Error> {
-        let connection_pool =
-            get_connection_pool(&config.database).await.expect("Failed to connect to Postgres.");
+        let connection_pool = get_connection_pool(&config.database);
         let email_client = EmailClient::from(config.email_client);
         let listener = TcpListener::bind(&config.application)?;
         let port = listener.local_addr().unwrap().port();
@@ -42,7 +41,7 @@ impl Application {
         )
         .await?;
 
-        Ok(Self { port, server })
+        Ok(Application { port, server })
     }
 
     pub fn port(&self) -> u16 {
@@ -111,11 +110,10 @@ async fn run(
     Ok(server)
 }
 
-pub async fn get_connection_pool(database: &DatabaseSettings) -> Result<PgPool, sqlx::Error> {
+pub fn get_connection_pool(database: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new()
         .connect_timeout(std::time::Duration::from_secs(2))
-        .connect_with(database.connection_with_db())
-        .await
+        .connect_lazy_with(database.connection_with_db())
 }
 
 #[derive(Clone)]
